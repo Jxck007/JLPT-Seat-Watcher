@@ -36,16 +36,16 @@ jobs:
       ENABLE_SCREENSHOT: "true"
       PYTHONUNBUFFERED: "1"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
           cache: pip
 
       - name: Restore Playwright browser
         id: browser-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('requirements.txt', 'pyproject.toml') }}
@@ -58,7 +58,7 @@ jobs:
 
       - name: Restore monitor state
         id: state-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: data/state.json
           key: jlpt-state-${{ github.run_id }}
@@ -92,7 +92,7 @@ jobs:
 
       - name: Save monitor state
         if: always() && hashFiles('data/state.json') != ''
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: data/state.json
           key: jlpt-state-${{ github.run_id }}
@@ -111,7 +111,7 @@ jobs:
 
       - name: Upload failure diagnostics
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: jlpt-monitor-failure-${{ github.run_id }}
           path: |
@@ -119,4 +119,3 @@ jobs:
             data/state.json
           if-no-files-found: warn
           retention-days: 14
-
