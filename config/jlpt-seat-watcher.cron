@@ -1,0 +1,3 @@
+# Run from `crontab -e` after replacing /opt/JLPT-Seat-Watcher if needed.
+*/5 * * * * cd /opt/JLPT-Seat-Watcher && .venv/bin/python monitor.py >> logs/cron.log 2>&1
+

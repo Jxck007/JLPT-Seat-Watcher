@@ -1,0 +1,122 @@
+name: Monitor JLPT N4 seats
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      force_notification_test:
+        description: Send a clearly labelled high-priority ntfy test
+        required: false
+        type: boolean
+        default: false
+      force_scraper_test:
+        description: Run a live scraper test without changing state or notifying
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: jlpt-n4-monitor
+  cancel-in-progress: false
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      NTFY_SERVER: ${{ vars.NTFY_SERVER || 'https://ntfy.sh' }}
+      NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
+      TIMEZONE: ${{ vars.TIMEZONE || 'Asia/Kolkata' }}
+      ENABLE_PLAYWRIGHT: "true"
+      ENABLE_SCREENSHOT: "true"
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Restore Playwright browser
+        id: browser-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('requirements.txt', 'pyproject.toml') }}
+
+      - name: Install application
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          playwright install chromium
+
+      - name: Restore monitor state
+        id: state-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: data/state.json
+          key: jlpt-state-${{ github.run_id }}
+          restore-keys: |
+            jlpt-state-
+
+      - name: Run forced scraper test
+        if: inputs.force_scraper_test == true
+        run: python -m jlpt_seat_watcher scraper-test
+
+      - name: Run forced notification test
+        if: inputs.force_notification_test == true
+        run: python -m jlpt_seat_watcher notify-test --priority high
+
+      - name: Run scheduled monitor
+        if: inputs.force_scraper_test != true && inputs.force_notification_test != true
+        shell: bash
+        run: |
+          if [[ -z "${NTFY_TOPIC}" ]]; then
+            {
+              echo "## JLPT N4 monitor"
+              echo
+              echo "> [!WARNING]"
+              echo "> NTFY_TOPIC is not configured. The scraper was validated, but notifications and state changes were skipped."
+              echo
+            } >> "${GITHUB_STEP_SUMMARY}"
+            python -m jlpt_seat_watcher scraper-test
+          else
+            python monitor.py
+          fi
+
+      - name: Save monitor state
+        if: always() && hashFiles('data/state.json') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: data/state.json
+          key: jlpt-state-${{ github.run_id }}
+
+      - name: Record execution metadata
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo
+            echo "### Execution"
+            echo "- Trigger: \`${GITHUB_EVENT_NAME}\`"
+            echo "- Run: [${GITHUB_RUN_ID}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})"
+            echo "- UTC completed: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload failure diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jlpt-monitor-failure-${{ github.run_id }}
+          path: |
+            logs/
+            data/state.json
+          if-no-files-found: warn
+          retention-days: 14
+

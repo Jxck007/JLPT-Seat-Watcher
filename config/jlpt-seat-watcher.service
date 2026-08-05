@@ -1,0 +1,22 @@
+[Unit]
+Description=JLPT Chennai N4 Seat Watcher
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=jlpt-watcher
+Group=jlpt-watcher
+WorkingDirectory=/opt/JLPT-Seat-Watcher
+EnvironmentFile=/opt/JLPT-Seat-Watcher/.env
+ExecStart=/opt/JLPT-Seat-Watcher/.venv/bin/python main.py
+Restart=always
+RestartSec=15
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/opt/JLPT-Seat-Watcher/data /opt/JLPT-Seat-Watcher/logs
+
+[Install]
+WantedBy=multi-user.target
+
