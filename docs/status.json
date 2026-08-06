@@ -10,14 +10,14 @@
   "current_remaining": 0,
   "current_session": "Afternoon",
   "execution_time_ms": 1614.44,
-  "generated_at": "2026-08-06T13:20:03.132781Z",
+  "generated_at": "2026-08-06T15:19:06.481780Z",
   "last_check": "2026-08-06T18:50:02.000235+05:30",
   "last_notification": {
     "at": "2026-08-06T18:50:02.000235+05:30",
     "type": "heartbeat"
   },
   "next_check": "2026-08-06T18:55:02.000235+05:30",
-  "project_status": "green",
+  "project_status": "yellow",
   "schema_version": 2,
   "seats": {
     "applied": 850,
