@@ -288,12 +288,17 @@ class MonitorEngine:
                 and self._previous_value(previous, observation)
                 != observation.current_value
             )
-            urgent_due = _is_due(
-                notifications["last_urgent_at"],
-                observation.checked_at,
-                self.settings.urgent_interval,
+            repeat_interval = getattr(
+                self.settings, "available_alert_interval", self.settings.urgent_interval
             )
-            if observation.available and (value_changed or urgent_due):
+            repeat_enabled = getattr(self.settings, "repeat_available_alerts", True)
+            urgent_due = _is_due(
+                notifications["last_urgent_at"], observation.checked_at, repeat_interval
+            )
+            first_available = previous is None and observation.available
+            if observation.available and (
+                value_changed or first_available or (repeat_enabled and urgent_due)
+            ):
                 kind = self._urgent_kind(observation, observations)
                 if self._send(
                     sent,
@@ -333,7 +338,11 @@ class MonitorEngine:
             self._update_statistics(state, observations, now.date())
             notifications = state["notifications"]
 
-            if _is_due(
+            quiet_heartbeat = getattr(self.settings, "quiet_heartbeat", False)
+            heartbeat_allowed = not quiet_heartbeat or all(
+                item.current_value == 0 for item in observations
+            )
+            if heartbeat_allowed and _is_due(
                 notifications["last_heartbeat_at"],
                 now,
                 self.settings.heartbeat_interval,

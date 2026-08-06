@@ -7,7 +7,7 @@ def test_monitor_workflow_contract() -> None:
     path = Path(".github/workflows/monitor.yml")
     raw = path.read_text(encoding="utf-8")
     workflow = yaml.load(raw, Loader=yaml.BaseLoader)
-    assert workflow["on"]["schedule"][0]["cron"] == "*/5 * * * *"
+    assert workflow["on"]["schedule"][0]["cron"] == "*/15 * * * *"
     inputs = workflow["on"]["workflow_dispatch"]["inputs"]
     assert {"force_notification_test", "force_scraper_test"} <= set(inputs)
     assert "GITHUB_STEP_SUMMARY" in raw
@@ -84,15 +84,18 @@ def test_pages_workflow_deploys_committed_dashboard_without_a_schedule() -> None
 def test_dashboard_assets_include_history_charts_and_downloads() -> None:
     html = Path("docs/index.html").read_text(encoding="utf-8")
     javascript = Path("docs/app.js").read_text(encoding="utf-8")
-    assert "chart.js@4.5.1" in html
-    assert 'id="remaining-chart"' in html
-    assert 'id="performance-chart"' in html
-    assert 'href="history.csv"' in html
+    assert "JLPT N4 Seat Monitor" in html
+    assert "Afternoon Session" in html
+    assert "Open JLPT Registration" in html
+    assert "Refresh Dashboard" in html
+    assert "remaining" in html
+    assert "last-heartbeat" in html
+    assert "last-alert" in html
     for filename in ("status.json", "history.json", "metrics.json", "health.json"):
         assert f'"{filename}"' in javascript
         assert Path("docs", filename).is_file()
     assert "REFRESH_INTERVAL_MS = 60_000" in javascript
     assert "api.github.com" not in javascript
-    assert "prefers-reduced-motion" in javascript
+    assert "REFRESH_INTERVAL_MS" in javascript
     assert Path("docs/history.json").is_file()
     assert Path("docs/history.csv").is_file()

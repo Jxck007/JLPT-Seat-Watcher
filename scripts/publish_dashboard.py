@@ -185,10 +185,15 @@ def _daily_statistics(executions: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def _last_alert(executions: list[dict[str, Any]]) -> dict[str, Any]:
     for execution in reversed(executions):
         notifications = execution.get("notifications")
-        if isinstance(notifications, list) and notifications:
+        urgent = (
+            [item for item in notifications if str(item).startswith("urgent")]
+            if isinstance(notifications, list)
+            else []
+        )
+        if urgent:
             return {
                 "at": execution.get("executed_at"),
-                "type": ", ".join(str(item) for item in notifications),
+                "type": ", ".join(str(item) for item in urgent),
             }
     return {"at": None, "type": None}
 
@@ -387,6 +392,7 @@ def build_payloads(
         "last_failure": last_failure,
         "workflow_status": workflow_status,
         "heartbeat_status": heartbeat_status,
+        "last_heartbeat_at": heartbeat_at.isoformat() if heartbeat_at else None,
         "stale": stale,
     }
     return {"status": status, "history": history, "metrics": metrics, "health": health}

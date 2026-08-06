@@ -8,15 +8,18 @@ session: Auto
 notification_provider: ntfy
 
 timezone: Asia/Kolkata
-check_interval: 300
+check_interval: 900
 heartbeat_interval: 3600
-urgent_interval: 600
+urgent_interval: 900
+repeat_available_alerts: true
+available_alert_interval: 900
+quiet_heartbeat: true
 log_level: INFO
 scraper_timeout: 30
 max_retries: 3
 enable_screenshot: true
 enable_playwright: true
-enable_daily_summary: true
+enable_daily_summary: false
 daily_summary_hour: 20
 log_retention_days: 30
 history_retention_days: 30

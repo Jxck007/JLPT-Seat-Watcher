@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import timedelta
 from typing import cast
 
 from watchtower.adapters.base import NotificationEvent, WebsiteAdapter
@@ -87,18 +88,22 @@ class JlptChennaiAdapter(WebsiteAdapter[SeatObservation]):
             observation = event.observation
             notifier.send(
                 f"JLPT {observation.level} SEATS AVAILABLE",
-                _notification_body(observation, self.settings.website_url),
+                _notification_body(observation, self.settings.website_url)
+                + "\n\nRegister immediately.",
                 event.priority,
-                tags=("rotating_light", "jlpt", observation.level.lower()),
+                tags=("rotating_light", "tada"),
             )
             return
 
         if event.kind == "heartbeat":
+            primary = event.observations[0]
+            next_check = primary.checked_at + timedelta(seconds=self.settings.check_interval)
             notifier.send(
-                "JLPT Monitor Running",
-                self._aggregate_body(event.observations),
-                Priority.SILENT,
-                tags=("white_check_mark", "jlpt"),
+                f"JLPT {primary.level} Monitor Active",
+                self._aggregate_body(event.observations)
+                + f"\nNext check: {next_check.strftime('%b %-d, %I:%M %p')}",
+                Priority.LOW,
+                tags=("white_check_mark", "clock1"),
             )
             return
 

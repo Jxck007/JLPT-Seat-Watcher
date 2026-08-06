@@ -25,7 +25,9 @@ class NotificationError(RuntimeError):
 
 
 class Priority(IntEnum):
-    SILENT = 1
+    LOW = 2
+    # Kept as an alias for callers using the original public name.
+    SILENT = 2
     NORMAL = 3
     HIGH = 4
     EMERGENCY = 5
