@@ -1,0 +1,268 @@
+name: Manual Operations
+
+on:
+  workflow_dispatch:
+    inputs:
+      test_notification:
+        description: Send a notification through the configured provider
+        type: boolean
+        default: false
+      test_scraper:
+        description: Run a live scraper connectivity test
+        type: boolean
+        default: false
+      test_parser:
+        description: Parse the bundled HTML fixture
+        type: boolean
+        default: false
+      print_current_seats:
+        description: Print the latest cached seat state
+        type: boolean
+        default: false
+      health_check:
+        description: Check configuration and cached-state health
+        type: boolean
+        default: false
+      export_logs:
+        description: Export logs from the latest monitoring workflow run
+        type: boolean
+        default: false
+      export_state:
+        description: Export the latest cached state as JSON
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: manual-operations-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  run-tools:
+    name: Run selected tools
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      TIMEZONE: ${{ vars.TIMEZONE || 'Asia/Kolkata' }}
+      NOTIFICATION_PROVIDER: ${{ vars.NOTIFICATION_PROVIDER || 'ntfy' }}
+      NTFY_SERVER: ${{ vars.NTFY_SERVER || 'https://ntfy.sh' }}
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+      SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+      SMTP_HOST: ${{ vars.SMTP_HOST }}
+      SMTP_PORT: ${{ vars.SMTP_PORT || '587' }}
+      SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      SMTP_FROM: ${{ vars.SMTP_FROM }}
+      SMTP_TO: ${{ secrets.SMTP_TO }}
+      SMTP_USE_TLS: ${{ vars.SMTP_USE_TLS || 'true' }}
+      SMTP_USE_SSL: ${{ vars.SMTP_USE_SSL || 'false' }}
+
+    steps:
+      - name: Validate selection
+        env:
+          TEST_NOTIFICATION: ${{ inputs.test_notification }}
+          TEST_SCRAPER: ${{ inputs.test_scraper }}
+          TEST_PARSER: ${{ inputs.test_parser }}
+          PRINT_CURRENT_SEATS: ${{ inputs.print_current_seats }}
+          HEALTH_CHECK: ${{ inputs.health_check }}
+          EXPORT_LOGS: ${{ inputs.export_logs }}
+          EXPORT_STATE: ${{ inputs.export_state }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/manual-results" "$RUNNER_TEMP/manual-artifacts"
+          if [[ "$TEST_NOTIFICATION" != "true" \
+             && "$TEST_SCRAPER" != "true" \
+             && "$TEST_PARSER" != "true" \
+             && "$PRINT_CURRENT_SEATS" != "true" \
+             && "$HEALTH_CHECK" != "true" \
+             && "$EXPORT_LOGS" != "true" \
+             && "$EXPORT_STATE" != "true" ]]; then
+            echo "No operation selected. Run the workflow again and select at least one action." \
+              | tee "$RUNNER_TEMP/manual-results/selection.txt"
+            exit 1
+          fi
+
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Install Chromium for scraper test
+        if: ${{ inputs.test_scraper == true }}
+        run: playwright install --with-deps chromium
+
+      - name: Restore latest monitoring state
+        id: state-cache
+        if: ${{ inputs.print_current_seats == true || inputs.health_check == true || inputs.export_state == true }}
+        uses: actions/cache/restore@v5
+        with:
+          path: data/state.json
+          key: jlpt-state-manual-${{ github.run_id }}
+          restore-keys: |
+            jlpt-state-
+
+      - name: Test notification
+        if: ${{ always() && inputs.test_notification == true }}
+        run: |
+          set -o pipefail
+          python -m watchtower notify-test --priority high 2>&1 \
+            | tee "$RUNNER_TEMP/manual-results/test-notification.txt"
+
+      - name: Test scraper
+        if: ${{ always() && inputs.test_scraper == true }}
+        run: |
+          set -o pipefail
+          GITHUB_STEP_SUMMARY="" python -m watchtower scraper-test 2>&1 \
+            | tee "$RUNNER_TEMP/manual-results/test-scraper.txt"
+
+      - name: Test parser
+        if: ${{ always() && inputs.test_parser == true }}
+        run: |
+          set -o pipefail
+          python -m watchtower parser-test tests/fixtures/current.html 2>&1 \
+            | tee "$RUNNER_TEMP/manual-results/test-parser.txt"
+
+      - name: Print current seats
+        if: ${{ always() && inputs.print_current_seats == true }}
+        run: |
+          set -o pipefail
+          python -m watchtower status 2>&1 \
+            | tee "$RUNNER_TEMP/manual-results/current-seats.txt"
+
+      - name: Health check
+        if: ${{ always() && inputs.health_check == true }}
+        run: |
+          set -o pipefail
+          python -m watchtower health 2>&1 \
+            | tee "$RUNNER_TEMP/manual-results/health-check.txt"
+
+      - name: Export latest monitoring logs
+        if: ${{ always() && inputs.export_logs == true }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -o pipefail
+          result_file="$RUNNER_TEMP/manual-results/export-logs.txt"
+          run_id="$(gh run list --workflow monitor.yml --limit 1 --json databaseId --jq '.[0].databaseId')"
+          if [[ -z "$run_id" ]]; then
+            echo "No monitoring workflow run was found." | tee "$result_file"
+            exit 1
+          fi
+
+          archive="$RUNNER_TEMP/manual-artifacts/monitor-run-${run_id}-logs.zip"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${run_id}/logs" > "$archive"
+          {
+            echo "Exported logs for monitoring run ${run_id}."
+            echo "Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${run_id}"
+            echo "Archive: $(basename "$archive") ($(stat --format=%s "$archive") bytes)"
+          } | tee "$result_file"
+
+      - name: Export current state
+        if: ${{ always() && inputs.export_state == true }}
+        env:
+          STATE_CACHE_KEY: ${{ steps.state-cache.outputs.cache-matched-key }}
+        run: |
+          set -o pipefail
+          result_file="$RUNNER_TEMP/manual-results/export-state.txt"
+          if [[ ! -f data/state.json ]]; then
+            echo "No cached monitoring state was found." | tee "$result_file"
+            exit 1
+          fi
+
+          output="$RUNNER_TEMP/manual-artifacts/state-export.json"
+          python -m watchtower export-state --output "$output" 2>&1 | tee "$result_file"
+          {
+            echo "Cache key: ${STATE_CACHE_KEY:-not reported}"
+            echo "Artifact file: $(basename "$output") ($(stat --format=%s "$output") bytes)"
+          } | tee -a "$result_file"
+
+      - name: Publish Actions summary
+        if: ${{ always() }}
+        env:
+          TEST_NOTIFICATION: ${{ inputs.test_notification }}
+          TEST_SCRAPER: ${{ inputs.test_scraper }}
+          TEST_PARSER: ${{ inputs.test_parser }}
+          PRINT_CURRENT_SEATS: ${{ inputs.print_current_seats }}
+          HEALTH_CHECK: ${{ inputs.health_check }}
+          EXPORT_LOGS: ${{ inputs.export_logs }}
+          EXPORT_STATE: ${{ inputs.export_state }}
+        run: |
+          results_dir="$RUNNER_TEMP/manual-results"
+
+          add_result() {
+            local title="$1"
+            local file="$2"
+            echo "### ${title}" >> "$GITHUB_STEP_SUMMARY"
+            echo '```text' >> "$GITHUB_STEP_SUMMARY"
+            if [[ -s "$file" ]]; then
+              sed -n '1,200p' "$file" >> "$GITHUB_STEP_SUMMARY"
+            else
+              echo "No result was produced. Check the step log for setup or execution errors." \
+                >> "$GITHUB_STEP_SUMMARY"
+            fi
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo >> "$GITHUB_STEP_SUMMARY"
+          }
+
+          {
+            echo "## Manual Operations"
+            echo
+            echo "Run: [${GITHUB_RUN_ID}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})"
+            echo
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ -f "$results_dir/selection.txt" ]]; then
+            add_result "Selection error" "$results_dir/selection.txt"
+          fi
+          if [[ "$TEST_NOTIFICATION" == "true" ]]; then
+            add_result "Test Notification" "$results_dir/test-notification.txt"
+          fi
+          if [[ "$TEST_SCRAPER" == "true" ]]; then
+            add_result "Test Scraper" "$results_dir/test-scraper.txt"
+          fi
+          if [[ "$TEST_PARSER" == "true" ]]; then
+            add_result "Test Parser" "$results_dir/test-parser.txt"
+          fi
+          if [[ "$PRINT_CURRENT_SEATS" == "true" ]]; then
+            add_result "Current Seats" "$results_dir/current-seats.txt"
+          fi
+          if [[ "$HEALTH_CHECK" == "true" ]]; then
+            add_result "Health Check" "$results_dir/health-check.txt"
+          fi
+          if [[ "$EXPORT_LOGS" == "true" ]]; then
+            add_result "Export Logs" "$results_dir/export-logs.txt"
+          fi
+          if [[ "$EXPORT_STATE" == "true" ]]; then
+            add_result "Export State" "$results_dir/export-state.txt"
+          fi
+
+      - name: Upload exported logs
+        if: ${{ always() && inputs.export_logs == true }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: monitoring-logs-${{ github.run_id }}
+          path: ${{ runner.temp }}/manual-artifacts/monitor-run-*-logs.zip
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Upload exported state
+        if: ${{ always() && inputs.export_state == true }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: monitoring-state-${{ github.run_id }}
+          path: ${{ runner.temp }}/manual-artifacts/state-export.json
+          if-no-files-found: warn
+          retention-days: 14

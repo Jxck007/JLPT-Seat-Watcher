@@ -42,7 +42,7 @@ to `data` and `logs`.
 
 ```bash
 cp .env.example .env
-# Set NTFY_TOPIC in .env.
+# Set credentials for the provider selected in config.yaml.
 docker compose up --build -d
 docker compose logs -f watcher
 docker compose exec watcher python status.py
@@ -53,8 +53,8 @@ runs as UID 10001 and includes the Playwright Chromium runtime.
 
 ## GitHub Actions
 
-1. Add the `NTFY_TOPIC` Actions secret.
-2. Optionally add `NTFY_TOKEN` and the `NTFY_SERVER` repository variable.
+1. Add the selected provider's credential variables as Actions secrets.
+2. For the default ntfy provider, add `NTFY_TOPIC` and optionally `NTFY_TOKEN`.
 3. Open **Actions → Monitor JLPT N4 seats → Run workflow**.
 4. Select `force_scraper_test` first, then run `force_notification_test`.
 5. Confirm the ntfy message and execution summary.
@@ -62,6 +62,13 @@ runs as UID 10001 and includes the Playwright Chromium runtime.
 Without a topic, scheduled runs perform a scraper validation and report a warning
 instead of failing or mutating alert state. State caches are automatically
 created once normal monitoring is enabled.
+
+Enable GitHub Pages with **GitHub Actions** as its source. The separate
+`Publish Dashboard` workflow deploys `docs/` after each monitor workflow. The
+monitor job generates and commits `status.json`, `history.json`, `metrics.json`,
+and `health.json`; public history is capped at 500 checks. The dashboard fetches
+those static files every 60 seconds without authentication or GitHub API rate
+limits. Manual dispatch remains available for republishing the committed site.
 
 ## Railway
 
@@ -82,4 +89,3 @@ for continuous seat monitoring.
 Stop the active scheduler, pull/build the new version, run the tests or scraper
 test, and restart. Keep `data/state.json` and `.env`; schema-incompatible state is
 preserved automatically rather than overwritten.
-

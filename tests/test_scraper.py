@@ -22,6 +22,41 @@ def test_static_fetch_uses_requests(settings: Settings) -> None:
 
 
 @responses.activate
+def test_fetches_all_configured_levels_with_one_request(settings: Settings) -> None:
+    configured = replace(settings, watched_levels=("N5", "N4", "N3", "N2", "N1"))
+    html = Path("tests/fixtures/current.html").read_text(encoding="utf-8")
+    responses.get(configured.website_url, body=html, status=200)
+    observations = Scraper(configured).fetch_all()
+    assert [item.level for item in observations] == ["N5", "N4", "N3", "N2", "N1"]
+    assert [item.remaining for item in observations] == [671, 0, 512, 439, 187]
+    assert len(responses.calls) == 1
+
+
+@responses.activate
+def test_fetches_same_level_from_both_sessions(settings: Settings) -> None:
+    configured = replace(settings, watched_levels=("N4",), session_mode="Both")
+    html = """
+    <div class="table-container1">
+      <div class="cell1">FORENOON EXAM APPLICATIONS</div>
+      <div class="cell1">N4 Total: 100</div>
+      <div class="cell1">Applied: 99</div>
+      <div class="cell1">Remaining: 1</div>
+      <div class="cell1">AFTERNOON EXAM APPLICATIONS</div>
+      <div class="cell1">N4 Total: 200</div>
+      <div class="cell1">Applied: 198</div>
+      <div class="cell1">Remaining: 2</div>
+    </div>
+    """
+    responses.get(configured.website_url, body=html, status=200)
+    observations = Scraper(configured).fetch_all()
+    assert [(item.session, item.remaining) for item in observations] == [
+        ("Forenoon", 1),
+        ("Afternoon", 2),
+    ]
+    assert len(responses.calls) == 1
+
+
+@responses.activate
 def test_retries_retryable_status(settings: Settings) -> None:
     html = Path("tests/fixtures/current.html").read_text(encoding="utf-8")
     responses.get(settings.website_url, status=503)

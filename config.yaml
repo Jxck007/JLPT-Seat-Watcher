@@ -1,0 +1,31 @@
+# Public, non-secret monitor configuration.
+# Provider credentials remain environment variables and must not be committed.
+website_url: https://www.jlptchennaiindia.com/
+adapter: jlpt_chennai
+watched_levels:
+  - N4
+session: Auto
+notification_provider: ntfy
+
+timezone: Asia/Kolkata
+check_interval: 300
+heartbeat_interval: 3600
+urgent_interval: 600
+log_level: INFO
+scraper_timeout: 30
+max_retries: 3
+enable_screenshot: true
+enable_playwright: true
+enable_daily_summary: true
+daily_summary_hour: 20
+log_retention_days: 30
+history_retention_days: 30
+ntfy_server: https://ntfy.sh
+
+# Email SMTP non-secret settings (used when notification_provider: email)
+smtp_host: ""
+smtp_port: 587
+smtp_from: ""
+smtp_to: []
+smtp_use_tls: true
+smtp_use_ssl: false

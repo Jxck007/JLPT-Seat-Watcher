@@ -23,6 +23,6 @@ USER watcher
 VOLUME ["/app/data", "/app/logs"]
 
 HEALTHCHECK --interval=5m --timeout=15s --start-period=1m --retries=2 \
-  CMD ["python", "-m", "jlpt_seat_watcher", "health"]
+  CMD ["python", "-m", "watchtower", "health"]
 
 CMD ["python", "main.py"]

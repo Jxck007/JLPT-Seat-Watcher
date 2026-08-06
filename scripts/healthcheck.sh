@@ -3,5 +3,4 @@ set -euo pipefail
 
 project_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${project_dir}"
-exec .venv/bin/python -m jlpt_seat_watcher health
-
+exec .venv/bin/python -m watchtower health

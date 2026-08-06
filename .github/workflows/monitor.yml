@@ -17,7 +17,7 @@ on:
         default: false
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: jlpt-n4-monitor
@@ -37,6 +37,9 @@ jobs:
       PYTHONUNBUFFERED: "1"
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
 
       - uses: actions/setup-python@v6
         with:
@@ -108,6 +111,34 @@ jobs:
             echo "- Run: [${GITHUB_RUN_ID}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})"
             echo "- UTC completed: $(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Publish live dashboard data
+        if: always()
+        env:
+          DASHBOARD_WORKFLOW_STATUS: ${{ job.status }}
+          DASHBOARD_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        shell: bash
+        run: |
+          export DASHBOARD_COMMIT_COUNT="$(git rev-list --count HEAD)"
+          python scripts/publish_dashboard.py \
+            --state data/state.json \
+            --docs docs \
+            --check-interval 300 \
+            --heartbeat-interval 3600 \
+            --timezone "${TIMEZONE}" \
+            --max-checks 500
+
+          git add docs/status.json docs/history.json docs/history.csv docs/metrics.json docs/health.json
+          if git diff --cached --quiet; then
+            echo "Dashboard data is already current."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore(dashboard): publish monitor run ${GITHUB_RUN_NUMBER}"
+          git pull --rebase origin main
+          git push origin HEAD:main
 
       - name: Upload failure diagnostics
         if: failure()

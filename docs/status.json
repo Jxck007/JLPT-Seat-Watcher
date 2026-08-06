@@ -1,0 +1,30 @@
+{
+  "applied": 850,
+  "checks": {
+    "duration_ms": null,
+    "last_success_at": "2026-08-05T22:21:18.929415+05:30",
+    "next_check_at": "2026-08-05T22:26:18.929415+05:30"
+  },
+  "current_exam": "N4",
+  "current_level": "N4",
+  "current_remaining": 0,
+  "current_session": "Afternoon",
+  "execution_time_ms": null,
+  "generated_at": "2026-08-06T09:07:13.415847Z",
+  "last_check": "2026-08-05T22:21:18.929415+05:30",
+  "last_notification": {
+    "at": null,
+    "type": null
+  },
+  "next_check": "2026-08-05T22:26:18.929415+05:30",
+  "project_status": "yellow",
+  "schema_version": 2,
+  "seats": {
+    "applied": 850,
+    "remaining": 0,
+    "total": 850
+  },
+  "total": 850,
+  "updated_at": "2026-08-05T22:21:18.929415+05:30",
+  "workflow_status": "unknown"
+}

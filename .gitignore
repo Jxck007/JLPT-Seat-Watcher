@@ -13,6 +13,8 @@ dist/
 build/
 data/state.json
 data/state.lock
+data/history.json
+data/history.csv
 data/*.corrupt-*.json
 logs/*.log
 logs/*.jsonl

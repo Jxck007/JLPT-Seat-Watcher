@@ -1,0 +1,288 @@
+- generic [active] [ref=e1]:
+  - link "Skip to dashboard" [ref=e2] [cursor=pointer]:
+    - /url: "#main"
+  - banner [ref=e3]:
+    - link "Watchtower dashboard home" [ref=e4] [cursor=pointer]:
+      - /url: "#top"
+      - generic [ref=e5]: 席
+      - generic [ref=e6]:
+        - strong [ref=e7]: Watchtower
+        - generic [ref=e8]: JLPT Chennai adapter
+    - navigation "Primary navigation" [ref=e9]:
+      - link "Status" [ref=e10] [cursor=pointer]:
+        - /url: "#status"
+      - link "Activity" [ref=e11] [cursor=pointer]:
+        - /url: "#activity"
+      - link "System" [ref=e12] [cursor=pointer]:
+        - /url: "#architecture"
+      - link "Docs" [ref=e13] [cursor=pointer]:
+        - /url: "#documentation"
+    - generic [ref=e14]:
+      - link "GitHub" [ref=e15] [cursor=pointer]:
+        - /url: https://github.com/Jxck007/JLPT-Seat-Watcher
+        - text: GitHub ↗
+      - button "Switch to dark theme" [ref=e16] [cursor=pointer]:
+        - generic [ref=e18]: Dark theme
+  - main [ref=e19]:
+    - region [ref=e20]:
+      - generic [ref=e21]:
+        - paragraph [ref=e22]: Automated seat intelligence
+        - heading "Know when a seat opens." [level=1] [ref=e23]
+        - paragraph [ref=e24]: A live view of JLPT Chennai availability, monitor health, and delivery confidence.
+        - generic [ref=e25]:
+          - link "Open dashboard" [ref=e26] [cursor=pointer]:
+            - /url: "#status"
+          - link "Deploy your own" [ref=e27] [cursor=pointer]:
+            - /url: deployment.md
+      - complementary "Live monitor status" [ref=e28]:
+        - generic [ref=e29]:
+          - generic [ref=e30]: Live monitor
+          - generic [ref=e31]: Updated 16 hours ago
+        - generic [ref=e34]:
+          - strong [ref=e35]: Snapshot stale
+          - paragraph [ref=e36]: The public snapshot is older than the expected monitoring interval.
+        - generic [ref=e37]:
+          - generic [ref=e38]:
+            - text: Target
+            - strong [ref=e39]:
+              - generic [ref=e40]: N4
+              - text: Afternoon session
+          - generic [ref=e41]:
+            - text: Remaining
+            - strong [ref=e42]: "0"
+        - generic [ref=e43]:
+          - img "GitHub Actions monitor workflow status" [ref=e44]
+          - generic [ref=e45]: Public data only
+    - region "Repository statistics" [ref=e46]:
+      - generic [ref=e47]:
+        - generic [ref=e48]: GH
+        - generic [ref=e49]:
+          - generic [ref=e50]: Repository
+          - strong [ref=e51]: Jxck007 / JLPT-Seat-Watcher
+      - generic [ref=e52]:
+        - generic [ref=e53]:
+          - term [ref=e54]: Commits
+          - definition [ref=e55]: "6"
+        - generic [ref=e56]:
+          - term [ref=e57]: Revision
+          - definition [ref=e58]: ff76b72
+        - generic [ref=e59]:
+          - term [ref=e60]: Branch
+          - definition [ref=e61]: main
+        - generic [ref=e62]:
+          - term [ref=e63]: Language
+          - definition [ref=e64]: Python
+      - link "View source" [ref=e65] [cursor=pointer]:
+        - /url: https://github.com/Jxck007/JLPT-Seat-Watcher
+        - text: View source ↗
+    - region [ref=e66]:
+      - generic [ref=e67]:
+        - heading "Monitor at a glance" [level=2] [ref=e68]
+        - paragraph [ref=e69]: Everything needed to trust the latest result, without exposing runtime secrets.
+      - generic [ref=e70]:
+        - article [ref=e71]:
+          - generic [ref=e72]:
+            - generic [ref=e73]:
+              - text: Current seats
+              - strong [ref=e74]: "0"
+            - generic [ref=e75]: No seats detected
+          - generic [ref=e76]:
+            - generic [ref=e77]: N4
+            - generic [ref=e79]: Afternoon session
+          - generic [ref=e80]:
+            - generic [ref=e81]:
+              - term [ref=e82]: Applied
+              - definition [ref=e83]: "850"
+            - generic [ref=e84]:
+              - term [ref=e85]: Total capacity
+              - definition [ref=e86]: "850"
+            - generic [ref=e87]:
+              - term [ref=e88]: Last updated
+              - definition [ref=e89]: Aug 5, 2026, 10:21 PM
+        - article [ref=e90]:
+          - generic [ref=e91]:
+            - generic [ref=e92]: Health
+            - generic [ref=e93]: Check
+          - strong [ref=e95]: Snapshot stale
+          - paragraph [ref=e96]: The public snapshot is older than the expected monitoring interval.
+          - generic "Monitor health signals" [ref=e97]:
+            - generic [ref=e98]: Workflow
+            - generic [ref=e100]: Freshness
+            - generic [ref=e102]: Delivery
+        - article [ref=e104]:
+          - generic [ref=e105]:
+            - generic [ref=e106]: Latest notification
+            - generic [ref=e107]: Configured provider
+          - strong [ref=e108]: No public notification yet
+          - paragraph [ref=e109]: Alerts appear here after a published delivery event.
+          - time [ref=e110]: Awaiting data
+        - article [ref=e111]:
+          - text: Check telemetry
+          - generic [ref=e112]:
+            - generic [ref=e113]:
+              - term [ref=e114]: Last successful check
+              - definition [ref=e115]: Aug 5, 2026, 10:21 PM
+            - generic [ref=e116]:
+              - term [ref=e117]: Check duration
+              - definition [ref=e118]: 0 ms
+            - generic [ref=e119]:
+              - term [ref=e120]: Next scheduled check
+              - definition [ref=e121]: Aug 5, 2026, 10:26 PM
+    - region [ref=e122]:
+      - generic [ref=e123]:
+        - heading "Automation activity" [level=2] [ref=e124]
+        - paragraph [ref=e125]: Deployment state, recent monitoring runs, and the latest 500 checks.
+      - generic [ref=e126]:
+        - article [ref=e127]:
+          - generic [ref=e128]:
+            - generic [ref=e129]:
+              - text: GitHub Actions
+              - heading "Workflow history" [level=3] [ref=e130]
+            - link "All runs" [ref=e131] [cursor=pointer]:
+              - /url: https://github.com/Jxck007/JLPT-Seat-Watcher/actions/workflows/monitor.yml
+              - text: All runs ↗
+          - paragraph [ref=e132]: No successful checks have been published yet.
+          - list "Recent monitor workflow runs" [ref=e133]:
+            - listitem [ref=e134]:
+              - generic [ref=e135]: Workflow history is awaiting its first published check.
+        - complementary [ref=e136]:
+          - generic [ref=e137]: GitHub Pages
+          - heading "Publication needs attention" [level=3] [ref=e140]
+          - paragraph [ref=e141]: The committed snapshot is missing or stale.
+          - time [ref=e142]: Aug 6, 2026, 2:23 PM
+          - link "Deployment details" [ref=e143] [cursor=pointer]:
+            - /url: https://github.com/Jxck007/JLPT-Seat-Watcher/actions/workflows/pages.yml
+            - text: Deployment details ↗
+      - generic "History summary" [ref=e144]:
+        - generic [ref=e145]:
+          - generic [ref=e146]: Checks today
+          - strong [ref=e147]: "0"
+        - generic [ref=e148]:
+          - generic [ref=e149]: Notifications today
+          - strong [ref=e150]: "0"
+        - generic [ref=e151]:
+          - generic [ref=e152]: Average latency
+          - strong [ref=e153]: 0 ms
+        - generic [ref=e154]:
+          - generic [ref=e155]: Average runtime
+          - strong [ref=e156]: 0 ms
+        - generic [ref=e157]:
+          - generic [ref=e158]: Monitor uptime
+          - strong [ref=e159]: 100.00%
+        - link "Export CSV" [ref=e160] [cursor=pointer]:
+          - /url: history.csv
+      - generic [ref=e161]:
+        - article [ref=e162]:
+          - generic [ref=e163]:
+            - generic [ref=e164]:
+              - heading "Seat availability" [level=3] [ref=e165]
+              - paragraph [ref=e166]: Remaining seats by watched level and session.
+            - generic [ref=e167]: 500 checks
+          - img "Remaining seats over 30 days" [ref=e169]
+        - article [ref=e170]:
+          - generic [ref=e171]:
+            - generic [ref=e172]:
+              - heading "Monitor performance" [level=3] [ref=e173]
+              - paragraph [ref=e174]: Website latency compared with total execution time.
+            - generic [ref=e175]: Milliseconds
+          - img "Daily monitor performance" [ref=e177]
+      - status [ref=e178]:
+        - strong [ref=e179]: History is awaiting its first published check.
+        - generic [ref=e180]: Charts populate automatically after the monitoring workflow publishes history.
+    - region [ref=e181]:
+      - generic [ref=e182]:
+        - heading "A clean security boundary" [level=2] [ref=e183]
+        - paragraph [ref=e184]: GitHub Pages reads safe public output. Fetching, parsing, validation, state, and notifications stay in the monitor runtime.
+      - generic [ref=e185]:
+        - img "JLPT Chennai flows through the adapter and Watchtower core to notifications and sanitized public files used by this dashboard" [ref=e186]:
+          - generic [ref=e187]:
+            - generic [ref=e188]: Website
+            - strong [ref=e189]: JLPT Chennai
+            - generic [ref=e190]: Public source
+          - generic [ref=e191]: →
+          - generic [ref=e192]:
+            - generic [ref=e193]: Adapter
+            - strong [ref=e194]: Fetch + parse
+            - generic [ref=e195]: Validate + notify
+          - generic [ref=e196]: →
+          - generic [ref=e197]:
+            - generic [ref=e198]: Core
+            - strong [ref=e199]: Watchtower
+            - generic [ref=e200]: State + cadence
+          - generic [ref=e201]: ↘
+          - generic [ref=e202]:
+            - generic [ref=e203]:
+              - generic [ref=e204]: Private
+              - strong [ref=e205]: Notification
+              - generic [ref=e206]: Selected provider
+            - generic [ref=e207]:
+              - generic [ref=e208]: Public
+              - strong [ref=e209]: Safe JSON
+              - generic [ref=e210]: Pages dashboard
+        - generic [ref=e211]:
+          - generic [ref=e212]: Secret boundary
+          - paragraph [ref=e213]: Tokens, webhook URLs, SMTP credentials, and internal state never enter the static site.
+    - region [ref=e214]:
+      - generic [ref=e215]:
+        - heading "Common questions" [level=2] [ref=e216]
+        - paragraph [ref=e217]: What this dashboard knows, and what deliberately stays private.
+      - generic [ref=e218]:
+        - group [ref=e219]:
+          - generic "Is this page the monitor itself?" [ref=e220] [cursor=pointer]:
+            - text: Is this page the monitor itself?
+            - generic [ref=e221]: +
+        - group [ref=e222]:
+          - generic "Does the dashboard expose notification secrets?" [ref=e223] [cursor=pointer]:
+            - text: Does the dashboard expose notification secrets?
+            - generic [ref=e224]: +
+        - group [ref=e225]:
+          - generic "Why can seat data show as pending?" [ref=e226] [cursor=pointer]:
+            - text: Why can seat data show as pending?
+            - generic [ref=e227]: +
+        - group [ref=e228]:
+          - generic "Can Watchtower monitor another website?" [ref=e229] [cursor=pointer]:
+            - text: Can Watchtower monitor another website?
+            - generic [ref=e230]: +
+    - region [ref=e231]:
+      - generic [ref=e232]:
+        - heading "Documentation" [level=2] [ref=e233]
+        - paragraph [ref=e234]: From first deployment to adding another website adapter.
+      - generic [ref=e235]:
+        - link "System design Architecture Understand adapters, state, public output, and the security boundary." [ref=e236] [cursor=pointer]:
+          - /url: architecture.md
+          - generic [ref=e237]: System design
+          - strong [ref=e238]: Architecture
+          - paragraph [ref=e239]: Understand adapters, state, public output, and the security boundary.
+          - generic [ref=e240]: ↗
+        - link "Extend Adapters Monitor another website with four methods." [ref=e241] [cursor=pointer]:
+          - /url: adapters.md
+          - generic [ref=e242]: Extend
+          - strong [ref=e243]: Adapters
+          - paragraph [ref=e244]: Monitor another website with four methods.
+          - generic [ref=e245]: ↗
+        - link "Operate Deployment Run locally, in Docker, or with Actions." [ref=e246] [cursor=pointer]:
+          - /url: deployment.md
+          - generic [ref=e247]: Operate
+          - strong [ref=e248]: Deployment
+          - paragraph [ref=e249]: Run locally, in Docker, or with Actions.
+          - generic [ref=e250]: ↗
+        - link "Deliver Notifications Configure providers and alert cadence." [ref=e251] [cursor=pointer]:
+          - /url: notifications.md
+          - generic [ref=e252]: Deliver
+          - strong [ref=e253]: Notifications
+          - paragraph [ref=e254]: Configure providers and alert cadence.
+          - generic [ref=e255]: ↗
+        - link "Recover Troubleshooting Diagnose checks, parsing, and delivery." [ref=e256] [cursor=pointer]:
+          - /url: troubleshooting.md
+          - generic [ref=e257]: Recover
+          - strong [ref=e258]: Troubleshooting
+          - paragraph [ref=e259]: Diagnose checks, parsing, and delivery.
+          - generic [ref=e260]: ↗
+  - contentinfo [ref=e261]:
+    - generic [ref=e262]:
+      - strong [ref=e263]: Watchtower
+      - generic [ref=e264]: Static frontend. Private monitor.
+    - paragraph [ref=e265]: Built for clear signals and safe operations.
+    - link "Back to top" [ref=e266] [cursor=pointer]:
+      - /url: "#top"
+      - text: Back to top ↑

@@ -71,6 +71,16 @@ def test_status_stats_export_and_health(
     assert cli._execute(_args("export-state", output=None), settings) == 0
     assert '"schema_version": 1' in capsys.readouterr().out
 
+    history_dir = tmp_path / "history-export"
+    assert cli._execute(_args("export-history", output_dir=history_dir), settings) == 0
+    assert (history_dir / "history.json").exists()
+    assert (history_dir / "history.csv").exists()
+    dashboard_dir = tmp_path / "dashboard-export"
+    assert (
+        cli._execute(_args("export-dashboard", output_dir=dashboard_dir), settings) == 0
+    )
+    assert (dashboard_dir / "status.json").exists()
+
 
 def test_health_detects_missing_and_stale(
     settings: Settings, capsys: pytest.CaptureFixture[str]
@@ -81,6 +91,37 @@ def test_health_detects_missing_and_stale(
     _write_success_state(settings, stale)
     assert cli._execute(_args("health"), settings) == 1
     assert "stale" in capsys.readouterr().out
+
+
+def test_status_lists_both_sessions_for_same_level(
+    settings: Settings, capsys: pytest.CaptureFixture[str]
+) -> None:
+    now = datetime.now(settings.timezone)
+    forenoon = SeatObservation("Forenoon", "N4", 100, 99, 1, now, 100.0, "requests")
+    afternoon = SeatObservation("Afternoon", "N4", 200, 198, 2, now, 100.0, "requests")
+    store = StateStore(settings.state_path)
+    state = store.load()
+    state["current"] = forenoon.to_dict()
+    state["targets"] = {
+        "N4:Forenoon": {"current": forenoon.to_dict()},
+        "N4:Afternoon": {"current": afternoon.to_dict()},
+    }
+    state["statistics"].update(
+        {
+            "successes": 1,
+            "last_success_at": now.isoformat(),
+            "duration_total_ms": 100.0,
+            "latency_total_ms": 100.0,
+        }
+    )
+    store.save(state)
+
+    assert cli._execute(_args("status"), settings) == 0
+    output = capsys.readouterr().out
+    assert "N4 (Forenoon)" in output
+    assert "N4 (Afternoon)" in output
+    assert "Remaining:        1" in output
+    assert "Remaining:        2" in output
 
 
 def test_parser_test_and_cleanup(
@@ -123,9 +164,6 @@ def test_scraper_check_and_notification_commands(
     delivered: list[tuple[str, int]] = []
 
     class FakeNotifier:
-        def __init__(self, _settings: Settings) -> None:
-            pass
-
         def send(self, title: str, message: str, priority: int, **kwargs: Any) -> None:
             del message, kwargs
             delivered.append((title, int(priority)))
@@ -134,7 +172,7 @@ def test_scraper_check_and_notification_commands(
     monkeypatch.setenv("GITHUB_STEP_SUMMARY", str(summary))
     monkeypatch.setattr(cli, "Scraper", FakeScraper)
     monkeypatch.setattr(cli, "MonitorService", FakeService)
-    monkeypatch.setattr(cli, "NtfyNotifier", FakeNotifier)
+    monkeypatch.setattr(cli.Notifier, "create", lambda _settings: FakeNotifier())
 
     assert cli._execute(_args("scraper-test"), settings) == 0
     assert "passed" in summary.read_text(encoding="utf-8")

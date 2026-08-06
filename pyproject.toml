@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "jlpt-seat-watcher"
 version = "1.0.0"
-description = "Fault-tolerant JLPT Chennai N4 seat availability monitor"
+description = "Adapter-driven, fault-tolerant website monitor"
 readme = "README.md"
 requires-python = ">=3.12"
 license = {file = "LICENSE"}
@@ -15,11 +15,13 @@ dependencies = [
   "filelock==3.18.0",
   "playwright==1.54.0",
   "python-dotenv==1.1.1",
+  "PyYAML==6.0.2",
   "requests==2.32.4",
 ]
 
 [project.scripts]
-jlpt-seat-watcher = "jlpt_seat_watcher.cli:main"
+watchtower = "watchtower.cli:main"
+jlpt-seat-watcher = "watchtower.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -42,15 +44,14 @@ select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
 [tool.mypy]
 python_version = "3.12"
 strict = true
-packages = ["jlpt_seat_watcher"]
+packages = ["watchtower"]
 mypy_path = "src"
 
 [tool.pytest.ini_options]
-addopts = "--strict-markers --strict-config --cov=jlpt_seat_watcher --cov-report=term-missing --cov-fail-under=85"
+addopts = "--strict-markers --strict-config --cov=watchtower --cov-report=term-missing --cov-fail-under=85"
 testpaths = ["tests"]
 markers = ["live: accesses the live JLPT website"]
 
 [tool.coverage.run]
 branch = true
-source = ["jlpt_seat_watcher"]
-
+source = ["watchtower"]

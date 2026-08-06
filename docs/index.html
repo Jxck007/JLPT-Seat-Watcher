@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0a0d0c" />
+    <meta
+      name="description"
+      content="Live status, seat availability, workflow history, and public telemetry for the JLPT Chennai monitor."
+    />
+    <title>Watchtower | JLPT Chennai status</title>
+    <link rel="icon" href="data:," />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to dashboard</a>
+    <div class="offline-banner" id="offline-banner" role="status" hidden>
+      Offline. Showing the most recently loaded monitor snapshot.
+    </div>
+    <div class="page-aurora" aria-hidden="true"></div>
+    <div class="page-grid" aria-hidden="true"></div>
+
+    <header class="site-header glass-shell">
+      <a class="brand" href="#top" aria-label="Watchtower dashboard home">
+        <span class="brand-mark" aria-hidden="true">席</span>
+        <span class="brand-copy">
+          <strong>Watchtower</strong>
+          <small>JLPT Chennai adapter</small>
+        </span>
+      </a>
+
+      <nav aria-label="Primary navigation">
+        <a href="#status">Status</a>
+        <a href="#activity">Activity</a>
+        <a href="#architecture">System</a>
+        <a href="#documentation">Docs</a>
+      </nav>
+
+      <div class="header-actions">
+        <a
+          class="github-link"
+          href="https://github.com/Jxck007/JLPT-Seat-Watcher"
+          target="_blank"
+          rel="noreferrer"
+        >GitHub <span aria-hidden="true">↗</span></a>
+        <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch to light theme" aria-pressed="true">
+          <span class="theme-icon" aria-hidden="true"></span>
+          <span class="theme-label">Light theme</span>
+        </button>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="top" aria-labelledby="page-title">
+        <div class="hero-copy reveal">
+          <p class="eyebrow">Automated seat intelligence</p>
+          <h1 id="page-title">Know when a seat opens.</h1>
+          <p class="hero-summary">A live view of JLPT Chennai availability, monitor health, and delivery confidence.</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="#status">Open dashboard</a>
+            <a class="button button-secondary" href="deployment.md">Deploy your own</a>
+          </div>
+        </div>
+
+        <aside class="command-card glass-panel reveal" aria-label="Live monitor status">
+          <div class="command-topline">
+            <span class="system-label">Live monitor</span>
+            <span class="freshness" id="freshness-label">Loading snapshot</span>
+          </div>
+          <div class="command-state">
+            <span class="status-orbit is-loading" id="status-orbit" aria-hidden="true"><span></span></span>
+            <div>
+              <strong id="project-status">Checking systems</strong>
+              <p id="project-status-detail" aria-live="polite">Connecting to public status sources.</p>
+            </div>
+          </div>
+          <div class="command-readout">
+            <div>
+              <span>Target</span>
+              <strong><b id="current-exam">N4</b> <small id="current-session">Afternoon session</small></strong>
+            </div>
+            <div>
+              <span>Remaining</span>
+              <strong id="hero-remaining">-</strong>
+            </div>
+          </div>
+          <div class="badge-row">
+            <img
+              class="actions-badge"
+              src="https://github.com/Jxck007/JLPT-Seat-Watcher/actions/workflows/monitor.yml/badge.svg"
+              alt="GitHub Actions monitor workflow status"
+              width="190"
+              height="20"
+            />
+            <span class="privacy-note">Public data only</span>
+          </div>
+        </aside>
+      </section>
+
+      <section class="repo-strip glass-panel reveal" aria-label="Repository statistics">
+        <div class="repo-identity">
+          <span class="repo-mark" aria-hidden="true">GH</span>
+          <div>
+            <span>Repository</span>
+            <strong>Jxck007 / JLPT-Seat-Watcher</strong>
+          </div>
+        </div>
+        <dl class="repo-stats">
+          <div><dt>Commits</dt><dd id="repo-commits">-</dd></div>
+          <div><dt>Revision</dt><dd id="repo-revision">-</dd></div>
+          <div><dt>Branch</dt><dd id="repo-branch">main</dd></div>
+          <div><dt>Language</dt><dd id="repo-language">-</dd></div>
+        </dl>
+        <a href="https://github.com/Jxck007/JLPT-Seat-Watcher" target="_blank" rel="noreferrer">
+          View source <span aria-hidden="true">↗</span>
+        </a>
+      </section>
+
+      <section class="dashboard-section" id="status" aria-labelledby="status-title">
+        <div class="section-heading reveal">
+          <h2 id="status-title">Monitor at a glance</h2>
+          <p>Everything needed to trust the latest result, without exposing runtime secrets.</p>
+        </div>
+
+        <div class="cockpit-grid">
+          <article class="seat-card glass-panel reveal">
+            <div class="seat-heading">
+              <div>
+                <span class="metric-label">Current seats</span>
+                <strong class="seat-count" id="remaining-seats">-</strong>
+              </div>
+              <span class="availability-copy" id="availability-copy">Awaiting snapshot</span>
+            </div>
+            <div class="seat-context">
+              <span id="seat-context-exam">N4</span>
+              <i aria-hidden="true"></i>
+              <span id="seat-context-session">Afternoon session</span>
+            </div>
+            <dl class="seat-breakdown">
+              <div><dt>Applied</dt><dd id="applied-seats">-</dd></div>
+              <div><dt>Total capacity</dt><dd id="total-seats">-</dd></div>
+              <div><dt>Last updated</dt><dd id="last-updated">Awaiting data</dd></div>
+            </dl>
+          </article>
+
+          <article class="health-card glass-panel reveal">
+            <div class="health-header">
+              <span class="metric-label">Health</span>
+              <span class="health-score is-loading" id="health-ring"><b id="health-value">...</b></span>
+            </div>
+            <strong id="health-title">Evaluating</strong>
+            <p id="health-detail">Waiting for workflow and snapshot data.</p>
+            <div class="health-signals" aria-label="Monitor health signals">
+              <span><i class="signal-success" aria-hidden="true"></i>Workflow</span>
+              <span><i class="signal-fresh" aria-hidden="true"></i>Freshness</span>
+              <span><i class="signal-delivery" aria-hidden="true"></i>Delivery</span>
+            </div>
+          </article>
+
+          <article class="notification-card glass-panel reveal">
+            <div class="notification-heading">
+              <span class="metric-label">Latest notification</span>
+              <span class="notification-channel">Configured provider</span>
+            </div>
+            <strong id="notification-title">No public notification yet</strong>
+            <p id="last-notification">Alerts appear here after a published delivery event.</p>
+            <time id="notification-time">Awaiting data</time>
+          </article>
+
+          <article class="timing-card glass-panel reveal">
+            <span class="metric-label">Check telemetry</span>
+            <dl class="timing-list">
+              <div><dt>Last successful check</dt><dd id="last-success">Awaiting data</dd></div>
+              <div><dt>Check duration</dt><dd id="last-duration">Awaiting data</dd></div>
+              <div><dt>Next scheduled check</dt><dd id="next-check">Awaiting data</dd></div>
+            </dl>
+          </article>
+        </div>
+
+        <div class="data-note" id="data-note" role="status">
+          <strong>Public snapshot pending.</strong>
+          <span>Seat data appears when the monitor publishes <code>docs/status.json</code>. No private configuration is requested.</span>
+        </div>
+      </section>
+
+      <section class="activity-section" id="activity" aria-labelledby="activity-title">
+        <div class="section-heading reveal">
+          <h2 id="activity-title">Automation activity</h2>
+          <p>Deployment state, recent monitoring runs, and the latest 500 checks.</p>
+        </div>
+
+        <div class="activity-layout">
+          <article class="workflow-panel glass-panel reveal">
+            <div class="panel-heading">
+              <div>
+                <span class="metric-label">GitHub Actions</span>
+                <h3>Workflow history</h3>
+              </div>
+              <a id="workflow-link" href="https://github.com/Jxck007/JLPT-Seat-Watcher/actions/workflows/monitor.yml">
+                All runs <span aria-hidden="true">↗</span>
+              </a>
+            </div>
+            <p class="workflow-summary" id="workflow-summary" aria-live="polite">Loading recent runs from public history.</p>
+            <ol class="workflow-runs" id="workflow-runs" aria-label="Recent monitor workflow runs">
+              <li class="run-skeleton"><span></span><span></span><span></span></li>
+              <li class="run-skeleton"><span></span><span></span><span></span></li>
+              <li class="run-skeleton"><span></span><span></span><span></span></li>
+            </ol>
+          </article>
+
+          <aside class="deployment-panel glass-panel reveal">
+            <div class="deployment-visual">
+              <span class="deployment-ring is-loading" id="deployment-ring" aria-hidden="true"></span>
+              <span class="metric-label">GitHub Pages</span>
+            </div>
+            <h3 id="deployment-state">Checking deployment</h3>
+            <p id="deployment-detail">Loading the committed publication state.</p>
+            <time id="deployment-time">Awaiting data</time>
+            <a id="deployment-link" href="https://github.com/Jxck007/JLPT-Seat-Watcher/actions/workflows/pages.yml">
+              Deployment details <span aria-hidden="true">↗</span>
+            </a>
+          </aside>
+        </div>
+
+        <div class="statistics-strip glass-panel reveal" aria-label="History summary">
+          <div><span>Checks today</span><strong id="history-executions">-</strong></div>
+          <div><span>Notifications today</span><strong id="history-notifications">-</strong></div>
+          <div><span>Average latency</span><strong id="history-latency">-</strong></div>
+          <div><span>Average runtime</span><strong id="history-duration">-</strong></div>
+          <div><span>Monitor uptime</span><strong id="monitor-uptime">-</strong></div>
+          <a class="history-download" href="history.csv" download>Export CSV</a>
+        </div>
+
+        <div class="charts-grid">
+          <article class="chart-panel glass-panel reveal">
+            <div class="chart-heading">
+              <div><h3>Seat availability</h3><p>Remaining seats by watched level and session.</p></div>
+              <span>500 checks</span>
+            </div>
+            <div class="chart-frame"><canvas id="remaining-chart" role="img" aria-label="Remaining seats over 30 days"></canvas></div>
+          </article>
+          <article class="chart-panel glass-panel reveal">
+            <div class="chart-heading">
+              <div><h3>Monitor performance</h3><p>Website latency compared with total execution time.</p></div>
+              <span>Milliseconds</span>
+            </div>
+            <div class="chart-frame"><canvas id="performance-chart" role="img" aria-label="Daily monitor performance"></canvas></div>
+          </article>
+        </div>
+
+        <div class="history-empty" id="history-empty" role="status">
+          <strong>History is awaiting its first published check.</strong>
+          <span>Charts populate automatically after the monitoring workflow publishes history.</span>
+        </div>
+      </section>
+
+      <section class="architecture-section" id="architecture" aria-labelledby="architecture-title">
+        <div class="section-heading reveal">
+          <h2 id="architecture-title">A clean security boundary</h2>
+          <p>GitHub Pages reads safe public output. Fetching, parsing, validation, state, and notifications stay in the monitor runtime.</p>
+        </div>
+
+        <div class="architecture-board glass-panel reveal">
+          <div class="architecture-flow" role="img" aria-label="JLPT Chennai flows through the adapter and Watchtower core to notifications and sanitized public files used by this dashboard">
+            <div class="flow-node">
+              <span>Website</span><strong>JLPT Chennai</strong><small>Public source</small>
+            </div>
+            <span class="flow-arrow" aria-hidden="true">→</span>
+            <div class="flow-node accent-node">
+              <span>Adapter</span><strong>Fetch + parse</strong><small>Validate + notify</small>
+            </div>
+            <span class="flow-arrow" aria-hidden="true">→</span>
+            <div class="flow-node">
+              <span>Core</span><strong>Watchtower</strong><small>State + cadence</small>
+            </div>
+            <span class="flow-split" aria-hidden="true">↘</span>
+            <div class="flow-output">
+              <div class="flow-node"><span>Private</span><strong>Notification</strong><small>Selected provider</small></div>
+              <div class="flow-node public-node"><span>Public</span><strong>Safe JSON</strong><small>Pages dashboard</small></div>
+            </div>
+          </div>
+          <div class="architecture-rule">
+            <span>Secret boundary</span>
+            <p>Tokens, webhook URLs, SMTP credentials, and internal state never enter the static site.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="faq-section" id="faq" aria-labelledby="faq-title">
+        <div class="faq-intro reveal">
+          <h2 id="faq-title">Common questions</h2>
+          <p>What this dashboard knows, and what deliberately stays private.</p>
+        </div>
+        <div class="faq-list reveal">
+          <details>
+            <summary>Is this page the monitor itself?<span aria-hidden="true">+</span></summary>
+            <p>No. GitHub Pages is a static presentation layer. The Python monitor runs separately through GitHub Actions or your chosen runtime.</p>
+          </details>
+          <details>
+            <summary>Does the dashboard expose notification secrets?<span aria-hidden="true">+</span></summary>
+            <p>No. It reads four sanitized JSON files from GitHub Pages. Provider credentials never reach the browser.</p>
+          </details>
+          <details>
+            <summary>Why can seat data show as pending?<span aria-hidden="true">+</span></summary>
+            <p>The dashboard starts with a safe empty snapshot. Seat totals appear after a successful monitor run publishes public state.</p>
+          </details>
+          <details>
+            <summary>Can Watchtower monitor another website?<span aria-hidden="true">+</span></summary>
+            <p>Yes. Add an adapter that implements fetch, parse, validate, and notify. The core monitoring engine remains unchanged.</p>
+          </details>
+        </div>
+      </section>
+
+      <section class="documentation-section" id="documentation" aria-labelledby="documentation-title">
+        <div class="docs-intro reveal">
+          <h2 id="documentation-title">Documentation</h2>
+          <p>From first deployment to adding another website adapter.</p>
+        </div>
+        <div class="docs-grid reveal">
+          <a class="doc-featured" href="architecture.md">
+            <span>System design</span><strong>Architecture</strong><p>Understand adapters, state, public output, and the security boundary.</p><i aria-hidden="true">↗</i>
+          </a>
+          <a href="adapters.md"><span>Extend</span><strong>Adapters</strong><p>Monitor another website with four methods.</p><i aria-hidden="true">↗</i></a>
+          <a href="deployment.md"><span>Operate</span><strong>Deployment</strong><p>Run locally, in Docker, or with Actions.</p><i aria-hidden="true">↗</i></a>
+          <a href="notifications.md"><span>Deliver</span><strong>Notifications</strong><p>Configure providers and alert cadence.</p><i aria-hidden="true">↗</i></a>
+          <a href="troubleshooting.md"><span>Recover</span><strong>Troubleshooting</strong><p>Diagnose checks, parsing, and delivery.</p><i aria-hidden="true">↗</i></a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div><strong>Watchtower</strong><span>Static frontend. Private monitor.</span></div>
+      <p>Built for clear signals and safe operations.</p>
+      <a href="#top">Back to top <span aria-hidden="true">↑</span></a>
+    </footer>
+
+    <noscript>
+      <div class="noscript">JavaScript is required to load the public status snapshot and GitHub telemetry.</div>
+    </noscript>
+  </body>
+</html>

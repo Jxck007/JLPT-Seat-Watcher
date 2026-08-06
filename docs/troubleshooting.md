@@ -2,10 +2,12 @@
 
 ## No notification arrived
 
-Run `python notify_test.py`. Confirm `NTFY_TOPIC` has no surrounding whitespace,
-the client is subscribed to the same topic, and the device allows ntfy
-notifications. For a protected server, verify `NTFY_SERVER` and `NTFY_TOKEN`.
-Errors intentionally omit the topic and token.
+Run `python notify_test.py` and confirm `notification_provider` selects the
+intended provider. For ntfy, verify `NTFY_TOPIC` and optional `NTFY_TOKEN`. For
+Telegram, verify the bot token, chat ID, and that the bot can message the chat.
+For Discord or Slack, verify the incoming webhook is active. For email, verify
+the SMTP host, sender, recipients, TLS mode, and credentials. Errors
+intentionally omit topics, tokens, passwords, and webhook URLs.
 
 ## Playwright says Chromium is missing
 
@@ -44,10 +46,17 @@ predictable urgent repeats.
 
 ## Can I monitor another level?
 
-This release deliberately fixes the target to N4 and validates its Afternoon
-placement. Changing levels requires corresponding parser fixtures, alert copy,
-and acceptance tests; an environment toggle could accidentally monitor the wrong
-exam.
+Yes. Add any unique combination of N5, N4, N3, N2, and N1 under
+`watched_levels` in `config.yaml`. Session placement is not fixed by level.
+Choose `session: Auto` to detect placement, a named session to filter it, or
+`session: Both` to monitor matches in both sections. `WATCHED_LEVELS=N4,N2` and
+`WATCHED_SESSION=Both` environment overrides are also supported.
+
+## Why does Auto reject a level found in both sessions?
+
+Auto intentionally requires one unambiguous session per selected level. Use
+`session: Both` when the same level should be monitored independently in
+Forenoon and Afternoon.
 
 ## Does it register automatically?
 
@@ -60,4 +69,3 @@ manual.
 Heartbeat and availability clocks are independent. Both can be due during one
 cycle because they communicate different facts: operational liveness and seat
 availability. Each type is deduplicated against its own persisted timestamp.
-
