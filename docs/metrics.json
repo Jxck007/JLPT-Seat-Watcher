@@ -1,19 +1,19 @@
 {
-  "average_runtime_ms": null,
-  "average_website_latency_ms": null,
-  "checks_today": 0,
-  "generated_at": "2026-08-06T09:07:13.415847Z",
+  "average_runtime_ms": 1346.8,
+  "average_website_latency_ms": 1215.68,
+  "checks_today": 1,
+  "generated_at": "2026-08-06T11:37:46.160297Z",
   "last_successful_alert": {
-    "at": null,
-    "type": null
+    "at": "2026-08-06T17:07:45.400698+05:30",
+    "type": "heartbeat"
   },
   "monitor_uptime_percent": 100.0,
-  "notifications_today": 0,
+  "notifications_today": 1,
   "repository": {
     "branch": "main",
-    "commit_count": 6,
+    "commit_count": 8,
     "language": "Python",
-    "revision": "ff76b72"
+    "revision": "4938c58"
   },
   "schema_version": 2
 }
