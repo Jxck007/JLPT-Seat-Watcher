@@ -1,5 +1,5 @@
 {
-  "count": 14,
+  "count": 15,
   "daily_statistics": [
     {
       "average_execution_time_ms": 1480.62,
@@ -21,11 +21,11 @@
       ]
     },
     {
-      "average_execution_time_ms": 1278.16,
-      "average_latency_ms": 1115.67,
+      "average_execution_time_ms": 1280.27,
+      "average_latency_ms": 1124.63,
       "date": "2026-08-07",
-      "executions": 12,
-      "notification_count": 8,
+      "executions": 13,
+      "notification_count": 9,
       "targets": [
         {
           "last_applied": 850,
@@ -494,9 +494,42 @@
         "run_url": "https://github.com/Jxck007/JLPT-Seat-Watcher/actions/runs/31189981833",
         "status": "success"
       }
+    },
+    {
+      "executed_at": "2026-08-07T21:28:37.750463+05:30",
+      "execution_time_ms": 1305.55,
+      "latency_ms": 1232.2,
+      "notification_count": 1,
+      "notifications": [
+        "heartbeat"
+      ],
+      "observations": [
+        {
+          "applied": 850,
+          "level": "N4",
+          "remaining": 0,
+          "session": "Afternoon",
+          "total": 850
+        }
+      ],
+      "seats": [
+        {
+          "applied": 850,
+          "level": "N4",
+          "remaining": 0,
+          "session": "Afternoon",
+          "total": 850
+        }
+      ],
+      "workflow": {
+        "run_id": "31195258410",
+        "run_number": "33",
+        "run_url": "https://github.com/Jxck007/JLPT-Seat-Watcher/actions/runs/31195258410",
+        "status": "success"
+      }
     }
   ],
-  "generated_at": "2026-08-07T14:55:17.921374Z",
+  "generated_at": "2026-08-07T15:58:38.385049Z",
   "max_checks": 500,
   "schema_version": 2,
   "workflow_runs": [
@@ -625,6 +658,13 @@
       "run_url": "https://github.com/Jxck007/JLPT-Seat-Watcher/actions/runs/31189981833",
       "status": "success",
       "updated_at": "2026-08-07T14:55:17.921374Z"
+    },
+    {
+      "run_id": "31195258410",
+      "run_number": "33",
+      "run_url": "https://github.com/Jxck007/JLPT-Seat-Watcher/actions/runs/31195258410",
+      "status": "success",
+      "updated_at": "2026-08-07T15:58:38.385049Z"
     }
   ]
 }
