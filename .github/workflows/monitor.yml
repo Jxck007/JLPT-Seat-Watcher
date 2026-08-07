@@ -140,7 +140,8 @@ jobs:
           DASHBOARD_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         shell: bash
         run: |
-          export DASHBOARD_COMMIT_COUNT="$(git rev-list --count HEAD)"
+          DASHBOARD_COMMIT_COUNT="$(git rev-list --count HEAD)"
+          export DASHBOARD_COMMIT_COUNT
           python scripts/publish_dashboard.py \
             --state data/state.json \
             --docs docs \
