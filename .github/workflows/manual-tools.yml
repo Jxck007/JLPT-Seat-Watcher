@@ -100,9 +100,17 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Install Chromium for scraper test
+      - name: Restore Playwright browser
         if: ${{ inputs.test_scraper == true }}
-        run: playwright install --with-deps chromium
+        id: browser-cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('requirements.txt', 'pyproject.toml') }}
+
+      - name: Install Chromium for scraper test
+        if: ${{ inputs.test_scraper == true && steps.browser-cache.outputs.cache-hit != 'true' }}
+        run: playwright install chromium
 
       - name: Restore latest monitoring state
         id: state-cache

@@ -66,7 +66,10 @@ def test_public_contracts_are_live_bounded_and_secret_free(tmp_path: Path) -> No
     state = {
         "current": checks[0]["observations"][0],
         "history": {"executions": checks},
-        "notifications": {"last_heartbeat_at": now.isoformat()},
+        "notifications": {
+            "last_heartbeat_at": now.isoformat(),
+            "last_urgent_at": (now - timedelta(hours=2)).isoformat(),
+        },
         "statistics": {
             "checks_total": 10,
             "successes": 9,
@@ -86,13 +89,77 @@ def test_public_contracts_are_live_bounded_and_secret_free(tmp_path: Path) -> No
     assert set(payloads) == {"status", "history", "metrics", "health"}
     assert payloads["history"]["count"] == 3
     assert len(payloads["history"]["executions"]) == 3
-    assert payloads["status"]["current_remaining"] == 2
-    assert payloads["status"]["next_check"] == (now + timedelta(minutes=5)).isoformat()
+    assert payloads["status"]["remaining"] == 2
+    assert (
+        payloads["status"]["next_expected_check"]
+        == (now + timedelta(minutes=15)).isoformat()
+    )
+    assert payloads["status"]["check_interval_seconds"] == 900
+    assert payloads["status"]["heartbeat_interval_seconds"] == 3600
+    assert payloads["status"]["heartbeat_priority"] == 2
+    assert payloads["status"]["seat_alert_priority"] == 4
+    assert payloads["status"]["availability"] == "available"
+    assert payloads["status"]["monitor_status"] == "healthy"
+    assert payloads["status"]["last_heartbeat"] == now.isoformat()
+    assert (
+        payloads["status"]["last_seat_alert"] == (now - timedelta(hours=2)).isoformat()
+    )
+    assert set(payloads["status"]) == {
+        "schema_version",
+        "level",
+        "session",
+        "remaining",
+        "applied",
+        "total",
+        "availability",
+        "last_check",
+        "next_expected_check",
+        "check_interval_seconds",
+        "heartbeat_interval_seconds",
+        "workflow_status",
+        "monitor_status",
+        "last_heartbeat",
+        "last_seat_alert",
+        "heartbeat_priority",
+        "seat_alert_priority",
+        "updated_at",
+    }
     assert payloads["metrics"]["checks_today"] == 3
     assert payloads["metrics"]["notifications_today"] == 3
     assert payloads["metrics"]["monitor_uptime_percent"] == 90.0
     assert payloads["health"]["healthy"] is True
     assert "must-not-be-published" not in json.dumps(payloads)
+
+
+def test_public_status_contract_handles_first_run_and_stale_state(
+    tmp_path: Path,
+) -> None:
+    now = datetime(2026, 8, 7, 8, 0, tzinfo=UTC)
+    result, docs = _run_publisher(tmp_path, {}, now)
+    assert result.returncode == 0, result.stderr
+    status = json.loads((docs / "status.json").read_text(encoding="utf-8"))
+    assert status["monitor_status"] == "waiting"
+    assert status["remaining"] is None
+    assert status["last_heartbeat"] is None
+    assert status["last_seat_alert"] is None
+
+    stale_check = now - timedelta(hours=1)
+    state = {
+        "current": _execution(stale_check)["observations"][0],
+        "history": {"executions": [_execution(stale_check)]},
+        "notifications": {},
+        "statistics": {
+            "checks_total": 1,
+            "successes": 1,
+            "consecutive_failures": 0,
+            "last_success_at": stale_check.isoformat(),
+            "last_failure_at": None,
+        },
+    }
+    result, docs = _run_publisher(tmp_path, state, now)
+    assert result.returncode == 0, result.stderr
+    status = json.loads((docs / "status.json").read_text(encoding="utf-8"))
+    assert status["monitor_status"] == "delayed"
 
 
 def test_publisher_writes_all_dashboard_files(tmp_path: Path) -> None:

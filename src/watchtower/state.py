@@ -36,6 +36,7 @@ def new_state() -> dict[str, Any]:
             "last_urgent_at": None,
             "last_urgent_remaining": None,
             "last_daily_summary_date": None,
+            "failures": {"count": 0, "last_at": None, "last_kind": None},
         },
         "statistics": {
             "checks_total": 0,

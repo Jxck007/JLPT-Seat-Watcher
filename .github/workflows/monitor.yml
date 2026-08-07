@@ -2,14 +2,22 @@ name: Monitor JLPT N4 seats
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "*/15 * * * *"
   workflow_dispatch:
     inputs:
       force_notification_test:
-        description: Send a clearly labelled high-priority ntfy test
+        description: Send a clearly labelled ntfy test
         required: false
         type: boolean
         default: false
+      notification_test_priority:
+        description: Priority for the forced notification test
+        required: false
+        type: choice
+        options:
+          - low
+          - high
+        default: high
       force_scraper_test:
         description: Run a live scraper test without changing state or notifying
         required: false
@@ -32,6 +40,11 @@ jobs:
       NTFY_SERVER: ${{ vars.NTFY_SERVER || 'https://ntfy.sh' }}
       NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
       TIMEZONE: ${{ vars.TIMEZONE || 'Asia/Kolkata' }}
+      CHECK_INTERVAL: "900"
+      HEARTBEAT_INTERVAL: "3600"
+      REPEAT_AVAILABLE_ALERTS: "true"
+      AVAILABLE_ALERT_INTERVAL: "900"
+      QUIET_HEARTBEAT: "true"
       ENABLE_PLAYWRIGHT: "true"
       ENABLE_SCREENSHOT: "true"
       PYTHONUNBUFFERED: "1"
@@ -57,7 +70,9 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements.txt
-          playwright install chromium
+          if [[ "${{ steps.browser-cache.outputs.cache-hit }}" != "true" ]]; then
+            playwright install chromium
+          fi
 
       - name: Restore monitor state
         id: state-cache
@@ -74,7 +89,13 @@ jobs:
 
       - name: Run forced notification test
         if: inputs.force_notification_test == true
-        run: python -m jlpt_seat_watcher notify-test --priority high
+        shell: bash
+        run: |
+          priority="${{ inputs.notification_test_priority }}"
+          if [[ "${priority}" == "low" ]]; then
+            priority="silent"
+          fi
+          python -m jlpt_seat_watcher notify-test --priority "${priority}"
 
       - name: Run scheduled monitor
         if: inputs.force_scraper_test != true && inputs.force_notification_test != true
@@ -123,7 +144,7 @@ jobs:
           python scripts/publish_dashboard.py \
             --state data/state.json \
             --docs docs \
-            --check-interval 300 \
+            --check-interval 900 \
             --heartbeat-interval 3600 \
             --timezone "${TIMEZONE}" \
             --max-checks 500
