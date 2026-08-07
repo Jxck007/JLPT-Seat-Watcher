@@ -25,10 +25,11 @@ function timestamp(value) {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
-function notificationTime(value, urgentOnly = false) {
+function notificationTime(value, alertOnly = false) {
   if (value && typeof value === "object") {
     const type = primitive(value.type);
-    if (urgentOnly && (!type || !String(type).startsWith("urgent"))) return null;
+    const alertType = type && ["high", "max", "urgent"].some((kind) => String(type).startsWith(kind));
+    if (alertOnly && !alertType) return null;
     return primitive(value.at);
   }
   return primitive(value);
@@ -61,8 +62,10 @@ function legacyStatusValue(status, key) {
     applied: status.applied ?? seats.applied,
     total: status.total ?? seats.total,
     next_expected_check: status.next_check,
-    last_heartbeat: status.last_heartbeat_at,
-    last_seat_alert: notificationTime(status.last_notification, true),
+    last_min_notification: status.last_min_notification_at,
+    last_default_notification: status.last_default_notification_at ?? status.last_heartbeat,
+    last_high_alert: status.last_high_alert_at ?? status.last_seat_alert,
+    last_max_alert: status.last_max_alert_at,
   };
   return aliases[key];
 }
@@ -134,14 +137,25 @@ function render() {
     formatTime(statusValue(status, "next_expected_check"), "Waiting for first successful check"),
   );
   setText(
-    "last-heartbeat",
-    formatTime(statusValue(status, "last_heartbeat") ?? primitive(health.last_heartbeat_at), "Not sent yet"),
+    "last-min",
+    formatTime(statusValue(status, "last_min_notification"), "Not sent yet"),
+  );
+  setText(
+    "last-default",
+    formatTime(
+      statusValue(status, "last_default_notification") ?? primitive(health.last_default_notification_at),
+      "Not sent yet",
+    ),
   );
 
   const oldAlert = notificationTime(metrics.last_successful_alert, true);
   setText(
-    "last-alert",
-    formatTime(statusValue(status, "last_seat_alert") ?? oldAlert, "No seat alert yet"),
+    "last-high",
+    formatTime(statusValue(status, "last_high_alert") ?? oldAlert, "No high alert yet"),
+  );
+  setText(
+    "last-max",
+    formatTime(statusValue(status, "last_max_alert"), "No max alert yet"),
   );
 }
 

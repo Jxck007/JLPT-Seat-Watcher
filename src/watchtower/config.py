@@ -145,6 +145,7 @@ class Settings:
     repeat_available_alerts: bool = True
     available_alert_interval: int = 600
     quiet_heartbeat: bool = False
+    max_alert_interval: int = 21600
 
     @property
     def data_dir(self) -> Path:
@@ -242,4 +243,7 @@ class Settings:
                 config, "AVAILABLE_ALERT_INTERVAL", 900, 60, 86400
             ),
             quiet_heartbeat=_boolean(config, "QUIET_HEARTBEAT", True),
+            max_alert_interval=_integer(
+                config, "MAX_ALERT_INTERVAL", 21600, 3600, 604800
+            ),
         )

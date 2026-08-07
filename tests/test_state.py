@@ -47,3 +47,30 @@ def test_new_state_instances_are_independent() -> None:
     second = new_state()
     first["statistics"]["checks_total"] = 9
     assert second["statistics"]["checks_total"] == 0
+
+
+def test_legacy_notification_state_migrates_without_losing_cadence(
+    tmp_path: Path,
+) -> None:
+    path = tmp_path / "state.json"
+    path.write_text(
+        json.dumps(
+            {
+                **new_state(),
+                "notifications": {
+                    "last_heartbeat_at": "2026-08-08T10:00:00+05:30",
+                    "last_urgent_at": "2026-08-08T09:00:00+05:30",
+                    "last_urgent_remaining": 3,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    notifications = StateStore(path).load()["notifications"]
+    assert notifications["last_default_notification_at"] == (
+        "2026-08-08T10:00:00+05:30"
+    )
+    assert notifications["last_high_alert_at"] == "2026-08-08T09:00:00+05:30"
+    assert notifications["last_high_alert_remaining"] == 3
+    assert notifications["last_max_alert_at"] is None
