@@ -1,22 +1,22 @@
 {
   "applied": 850,
   "checks": {
-    "duration_ms": 1342.84,
-    "last_success_at": "2026-08-07T06:05:58.801695+05:30",
-    "next_check_at": "2026-08-07T06:10:58.801695+05:30"
+    "duration_ms": 1433.19,
+    "last_success_at": "2026-08-07T09:08:38.074081+05:30",
+    "next_check_at": "2026-08-07T09:13:38.074081+05:30"
   },
   "current_exam": "N4",
   "current_level": "N4",
   "current_remaining": 0,
   "current_session": "Afternoon",
-  "execution_time_ms": 1342.84,
-  "generated_at": "2026-08-07T00:36:00.068667Z",
-  "last_check": "2026-08-07T06:05:58.801695+05:30",
+  "execution_time_ms": 1433.19,
+  "generated_at": "2026-08-07T03:38:39.380861Z",
+  "last_check": "2026-08-07T09:08:38.074081+05:30",
   "last_notification": {
-    "at": "2026-08-07T06:05:58.801695+05:30",
+    "at": "2026-08-07T09:08:38.074081+05:30",
     "type": "heartbeat"
   },
-  "next_check": "2026-08-07T06:10:58.801695+05:30",
+  "next_check": "2026-08-07T09:13:38.074081+05:30",
   "project_status": "green",
   "schema_version": 2,
   "seats": {
@@ -25,6 +25,6 @@
     "total": 850
   },
   "total": 850,
-  "updated_at": "2026-08-07T06:05:58.801695+05:30",
+  "updated_at": "2026-08-07T09:08:38.074081+05:30",
   "workflow_status": "success"
 }
