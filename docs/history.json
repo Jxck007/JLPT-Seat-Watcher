@@ -1,5 +1,5 @@
 {
-  "count": 11,
+  "count": 12,
   "daily_statistics": [
     {
       "average_execution_time_ms": 1480.62,
@@ -21,10 +21,10 @@
       ]
     },
     {
-      "average_execution_time_ms": 1271.18,
-      "average_latency_ms": 1119.52,
+      "average_execution_time_ms": 1275.62,
+      "average_latency_ms": 1136.91,
       "date": "2026-08-07",
-      "executions": 9,
+      "executions": 10,
       "notification_count": 6,
       "targets": [
         {
@@ -397,9 +397,40 @@
         "run_url": "https://github.com/Jxck007/JLPT-Seat-Watcher/actions/runs/31174452467",
         "status": "success"
       }
+    },
+    {
+      "executed_at": "2026-08-07T17:58:52.392627+05:30",
+      "execution_time_ms": 1315.55,
+      "latency_ms": 1293.5,
+      "notification_count": 0,
+      "notifications": [],
+      "observations": [
+        {
+          "applied": 850,
+          "level": "N4",
+          "remaining": 0,
+          "session": "Afternoon",
+          "total": 850
+        }
+      ],
+      "seats": [
+        {
+          "applied": 850,
+          "level": "N4",
+          "remaining": 0,
+          "session": "Afternoon",
+          "total": 850
+        }
+      ],
+      "workflow": {
+        "run_id": "31178336628",
+        "run_number": "30",
+        "run_url": "https://github.com/Jxck007/JLPT-Seat-Watcher/actions/runs/31178336628",
+        "status": "success"
+      }
     }
   ],
-  "generated_at": "2026-08-07T11:32:28.256895Z",
+  "generated_at": "2026-08-07T12:28:53.212697Z",
   "max_checks": 500,
   "schema_version": 2,
   "workflow_runs": [
@@ -507,6 +538,13 @@
       "run_url": "https://github.com/Jxck007/JLPT-Seat-Watcher/actions/runs/31174452467",
       "status": "success",
       "updated_at": "2026-08-07T11:32:28.256895Z"
+    },
+    {
+      "run_id": "31178336628",
+      "run_number": "30",
+      "run_url": "https://github.com/Jxck007/JLPT-Seat-Watcher/actions/runs/31178336628",
+      "status": "success",
+      "updated_at": "2026-08-07T12:28:53.212697Z"
     }
   ]
 }
