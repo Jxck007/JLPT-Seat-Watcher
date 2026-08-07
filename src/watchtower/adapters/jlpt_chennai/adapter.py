@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta
 from typing import cast
 
 from watchtower.adapters.base import NotificationEvent, WebsiteAdapter
@@ -11,16 +12,29 @@ from watchtower.models import SeatObservation
 from watchtower.notifier import Notifier, Priority
 
 
-def _notification_body(observation: SeatObservation, website_url: str) -> str:
+def _notification_time(value: datetime) -> str:
+    return value.strftime("%b %-d, %I:%M %p")
+
+
+def _seat_alert_body(observation: SeatObservation) -> str:
     return "\n".join(
         (
-            f"Level: {observation.level}",
-            f"Session: {observation.session}",
             f"Remaining: {observation.remaining}",
-            f"Applied: {observation.applied}",
-            f"Total: {observation.total}",
-            f"Website: {website_url}",
-            f"Timestamp: {observation.checked_at.isoformat()}",
+            f"Applied: {observation.applied} / {observation.total}",
+            "",
+            "Register immediately.",
+        )
+    )
+
+
+def _heartbeat_body(observation: SeatObservation, check_interval: int) -> str:
+    next_check = observation.checked_at + timedelta(seconds=check_interval)
+    return "\n".join(
+        (
+            f"Remaining: {observation.remaining}",
+            f"Applied: {observation.applied} / {observation.total}",
+            f"Checked: {_notification_time(observation.checked_at)}",
+            f"Next check: {_notification_time(next_check)}",
         )
     )
 
@@ -72,12 +86,6 @@ class JlptChennaiAdapter(WebsiteAdapter[SeatObservation]):
                 raise RuntimeError("JLPT seat counters failed validation")
         return observations
 
-    def _aggregate_body(self, observations: tuple[SeatObservation, ...]) -> str:
-        return "\n\n".join(
-            _notification_body(observation, self.settings.website_url)
-            for observation in observations
-        )
-
     def notify(
         self, event: NotificationEvent[SeatObservation], notifier: Notifier
     ) -> None:
@@ -87,18 +95,19 @@ class JlptChennaiAdapter(WebsiteAdapter[SeatObservation]):
             observation = event.observation
             notifier.send(
                 f"JLPT {observation.level} SEATS AVAILABLE",
-                _notification_body(observation, self.settings.website_url),
+                _seat_alert_body(observation),
                 event.priority,
-                tags=("rotating_light", "jlpt", observation.level.lower()),
+                tags=("rotating_light", "tada"),
             )
             return
 
         if event.kind == "heartbeat":
+            primary = event.observations[0]
             notifier.send(
-                "JLPT Monitor Running",
-                self._aggregate_body(event.observations),
-                Priority.SILENT,
-                tags=("white_check_mark", "jlpt"),
+                f"JLPT {primary.level} Monitor Active",
+                _heartbeat_body(primary, self.settings.check_interval),
+                Priority.LOW,
+                tags=("white_check_mark", "clock1"),
             )
             return
 
@@ -106,10 +115,11 @@ class JlptChennaiAdapter(WebsiteAdapter[SeatObservation]):
             daily = event.daily_statistics or {}
             checks = max(int(daily.get("checks", 0)), 1)
             latency = float(daily.get("latency_total_ms", 0.0)) / checks
+            observation = event.observations[0]
             body = (
                 f"Checks today: {daily.get('checks', 0)}\n"
                 f"Average website latency: {latency:.0f} ms\n\n"
-                f"{self._aggregate_body(event.observations)}"
+                f"{_heartbeat_body(observation, self.settings.check_interval)}"
             )
             notifier.send(
                 "JLPT Monitor Daily Summary",

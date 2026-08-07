@@ -1,120 +1,74 @@
 <!doctype html>
-<html lang="en" data-theme="dark">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#0a0d0c" />
-    <meta name="description" content="Personal JLPT Chennai seat monitor dashboard." />
-    <title>Watchtower | Monitor</title>
+    <meta name="description" content="Current JLPT N4 Afternoon seat availability in Chennai." />
+    <meta name="color-scheme" content="light dark" />
+    <title>JLPT N4 Seat Monitor</title>
     <link rel="icon" href="data:," />
     <link rel="stylesheet" href="styles.css" />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js" defer></script>
     <script src="app.js" defer></script>
   </head>
   <body>
-    <a class="skip-link" href="#main">Skip to dashboard</a>
-    <div class="offline-banner" id="offline-banner" role="status" hidden></div>
-
-    <header class="topbar">
-      <a class="identity" href="#main" aria-label="Watchtower monitor">
-        <span class="identity-mark" aria-hidden="true">席</span>
-        <span><strong>Watchtower</strong><small>Personal monitor</small></span>
-      </a>
-      <div class="topbar-meta">
-        <span class="live-indicator"><i aria-hidden="true"></i><span id="refresh-state">Live feed</span></span>
-        <button class="icon-button" id="theme-toggle" type="button" aria-label="Switch to light theme" aria-pressed="true">
-          <span class="theme-icon" aria-hidden="true"></span>
-          <span class="theme-label">Light</span>
-        </button>
+    <header class="site-header">
+      <div>
+        <h1>JLPT N4 Seat Monitor</h1>
+        <p>Afternoon Session</p>
       </div>
+      <a href="https://github.com/Jxck007/JLPT-Seat-Watcher" target="_blank" rel="noreferrer">GitHub repository</a>
     </header>
 
-    <main id="main" class="dashboard-shell">
-      <section class="main-column" aria-labelledby="dashboard-title">
-        <div class="section-bar">
-          <div>
-            <span class="section-kicker">JLPT Chennai</span>
-            <h1 id="dashboard-title">Seat monitor</h1>
-          </div>
-          <span class="updated-at" id="updated-at">Loading</span>
+    <main class="dashboard">
+      <section class="availability-card" aria-labelledby="availability-heading">
+        <div class="card-heading">
+          <h2 id="availability-heading">Remaining Seats</h2>
+          <span class="availability-state is-neutral" id="availability-state">Waiting</span>
         </div>
-
-        <article class="seat-panel panel loading-state" id="seat-panel" aria-label="Current seat availability">
-          <div class="panel-topline">
-            <span class="label">Remaining seats</span>
-            <span class="state-chip is-loading" id="availability-state">Loading</span>
-          </div>
-          <div class="seat-reading">
-            <strong id="remaining-seats">-</strong>
-            <div class="watch-target">
-              <span id="current-exam">N4</span>
-              <i aria-hidden="true"></i>
-              <span id="current-session">Afternoon</span>
-            </div>
-          </div>
-          <div class="capacity-row">
-            <div><span>Applied</span><strong id="applied-seats">-</strong></div>
-            <div><span>Total</span><strong id="total-seats">-</strong></div>
-            <div><span>Last check</span><strong id="last-check">Awaiting data</strong></div>
-            <div><span>Next check</span><strong id="next-check">Awaiting data</strong></div>
-          </div>
-        </article>
-
-        <div class="lower-grid">
-          <article class="chart-panel panel" aria-labelledby="chart-title">
-            <div class="panel-heading">
-              <div><span class="label">History</span><h2 id="chart-title">Remaining seats</h2></div>
-              <span class="muted" id="history-count">0 checks</span>
-            </div>
-            <div class="chart-frame"><canvas id="remaining-chart" role="img" aria-label="Remaining seats history"></canvas><canvas id="performance-chart" hidden aria-hidden="true"></canvas></div>
-            <div class="empty-chart" id="history-empty">No checks published yet.</div>
-          </article>
-
-          <article class="telemetry-panel panel" aria-labelledby="telemetry-title">
-            <div class="panel-heading"><div><span class="label">Today</span><h2 id="telemetry-title">Telemetry</h2></div></div>
-            <dl class="telemetry-list">
-              <div><dt>Checks</dt><dd id="checks-today">-</dd></div>
-              <div><dt>Notifications</dt><dd id="notifications-today">-</dd></div>
-              <div><dt>Execution time</dt><dd id="execution-time">-</dd></div>
-              <div><dt>Website latency</dt><dd id="website-latency">-</dd></div>
-            </dl>
-          </article>
-        </div>
+        <strong class="remaining-value" id="remaining" aria-live="polite">...</strong>
+        <dl class="seat-counts">
+          <div><dt>Applied</dt><dd id="applied">...</dd></div>
+          <div><dt>Total</dt><dd id="total">...</dd></div>
+        </dl>
       </section>
 
-      <aside class="side-column" aria-label="Monitor controls and status">
-        <article class="health-panel panel" aria-labelledby="monitor-status-title">
-          <div class="status-heading">
-            <div><span class="label">Monitor status</span><h2 id="monitor-status-title">Checking</h2></div>
-            <span class="health-orb is-loading" id="health-orb" aria-hidden="true"><i></i></span>
-          </div>
-          <p class="status-detail" id="status-detail" aria-live="polite">Loading public monitor state.</p>
-          <div class="status-lines">
-            <div><span>Workflow</span><strong id="workflow-status">Loading</strong></div>
-            <div><span>Heartbeat</span><strong id="heartbeat-status">Loading</strong></div>
-            <div><span>Last notification</span><strong id="last-notification">No record</strong></div>
-          </div>
-        </article>
+      <section class="status-card" aria-labelledby="monitor-heading">
+        <div class="card-heading">
+          <h2 id="monitor-heading">Monitor</h2>
+          <span class="monitor-state is-waiting" id="monitor-state">Waiting for first check</span>
+        </div>
+        <dl class="detail-list">
+          <div><dt>Last checked</dt><dd id="last-check">Waiting for first successful check</dd></div>
+          <div><dt>Next expected check</dt><dd id="next-check">Waiting for first successful check</dd></div>
+        </dl>
+        <ul class="schedule-list" aria-label="Notification schedule">
+          <li>Checks every 15 minutes</li>
+          <li>Quiet update every 1 hour</li>
+          <li>High-priority alert when seats appear</li>
+        </ul>
+      </section>
 
-        <article class="action-panel panel" aria-labelledby="actions-title">
-          <div class="panel-heading"><div><span class="label">Controls</span><h2 id="actions-title">Actions</h2></div></div>
-          <div class="action-grid">
-            <a class="action-button action-primary" href="https://github.com/Jxck007/JLPT-Seat-Watcher/actions/workflows/monitor.yml" target="_blank" rel="noreferrer">Run monitor <span aria-hidden="true">↗</span></a>
-            <a class="action-button" href="https://github.com/Jxck007/JLPT-Seat-Watcher/actions/workflows/monitor.yml" target="_blank" rel="noreferrer">Test notification <span aria-hidden="true">↗</span></a>
-            <a class="action-button" href="https://github.com/Jxck007/JLPT-Seat-Watcher/actions/workflows/monitor.yml" target="_blank" rel="noreferrer">View logs <span aria-hidden="true">↗</span></a>
-            <a class="action-button" href="https://github.com/Jxck007/JLPT-Seat-Watcher" target="_blank" rel="noreferrer">GitHub repository <span aria-hidden="true">↗</span></a>
-          </div>
-        </article>
+      <section class="notification-card" aria-labelledby="notification-heading">
+        <h2 id="notification-heading">Notifications</h2>
+        <dl class="detail-list">
+          <div><dt>Last quiet heartbeat</dt><dd id="last-heartbeat">Not sent yet</dd></div>
+          <div><dt>Last seat alert</dt><dd id="last-alert">No seat alert yet</dd></div>
+          <div><dt>Provider</dt><dd>ntfy</dd></div>
+          <div><dt>Heartbeat</dt><dd>Low priority</dd></div>
+          <div><dt>Seat alert</dt><dd>High priority</dd></div>
+        </dl>
+      </section>
 
-        <article class="revision-panel panel" aria-label="Snapshot information">
-          <div><span class="label">Snapshot</span><strong id="snapshot-state">Loading</strong></div>
-          <div><span class="label">Revision</span><strong id="revision">-</strong></div>
-          <div><span class="label">Refresh</span><strong>60 seconds</strong></div>
-          <a class="data-link" href="history.csv" download>CSV export</a>
-        </article>
-      </aside>
+      <footer class="dashboard-footer">
+        <div class="actions">
+          <a class="primary-action" href="https://www.jlptchennaiindia.com/" target="_blank" rel="noreferrer">Open JLPT Registration</a>
+          <button id="refresh" type="button">Refresh</button>
+        </div>
+        <p><span id="data-state">Auto refresh: 60 seconds</span></p>
+      </footer>
     </main>
 
-    <noscript><div class="noscript">JavaScript is required to load monitor data.</div></noscript>
+    <div class="connection-message" id="connection-message" role="status" hidden>Temporarily unavailable</div>
+    <noscript><p class="noscript">JavaScript is required to display monitor data.</p></noscript>
   </body>
 </html>

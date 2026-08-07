@@ -37,6 +37,21 @@ def test_sends_expected_ntfy_headers(settings: Settings) -> None:
 
 
 @responses.activate
+def test_low_priority_ntfy_heartbeat_uses_click_url(settings: Settings) -> None:
+    responses.post("https://ntfy.test/test-topic", status=200)
+    NtfyNotifier(settings).send(
+        "JLPT N4 Monitor Active",
+        "Remaining: 0",
+        Priority.LOW,
+        tags=("white_check_mark", "clock1"),
+    )
+    request = responses.calls[0].request
+    assert request.headers["Priority"] == "2"
+    assert request.headers["Tags"] == "white_check_mark,clock1"
+    assert request.headers["Click"] == settings.website_url
+
+
+@responses.activate
 def test_retries_without_exposing_topic(settings: Settings) -> None:
     responses.post("https://ntfy.test/test-topic", status=503)
     responses.post("https://ntfy.test/test-topic", status=500)

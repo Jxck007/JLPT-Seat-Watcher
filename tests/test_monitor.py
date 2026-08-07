@@ -65,6 +65,23 @@ class RecordingNotifier:
         self.sent.append((title, message, priority))
 
 
+class DetailedNotifier:
+    configured = True
+
+    def __init__(self) -> None:
+        self.sent: list[tuple[str, str, Priority, tuple[str, ...]]] = []
+
+    def send(
+        self,
+        title: str,
+        message: str,
+        priority: Priority,
+        *,
+        tags: tuple[str, ...] = (),
+    ) -> None:
+        self.sent.append((title, message, priority, tags))
+
+
 class MultiScraper:
     def __init__(self, observations: tuple[SeatObservation, ...]) -> None:
         self.observations = observations
@@ -102,11 +119,12 @@ def service(
 
 
 def test_first_zero_sends_heartbeat_and_deduplicates(settings: Settings) -> None:
+    settings = replace(settings, quiet_heartbeat=True, enable_daily_summary=False)
     now = datetime(2026, 8, 5, 10, tzinfo=settings.timezone)
     notifier = FakeNotifier()
     first = service(settings, now, 0, notifier).run_once()
     assert first.notifications == ("heartbeat",)
-    second = service(settings, now + timedelta(minutes=5), 0, notifier).run_once()
+    second = service(settings, now + timedelta(minutes=15), 0, notifier).run_once()
     assert second.notifications == ()
     third = service(settings, now + timedelta(hours=1), 0, notifier).run_once()
     assert third.notifications == ("heartbeat",)
@@ -117,22 +135,68 @@ def test_first_zero_sends_heartbeat_and_deduplicates(settings: Settings) -> None
     assert (settings.data_dir / "history.csv").exists()
 
 
-def test_positive_alerts_immediately_on_change_then_every_ten_minutes(
+def test_ordinary_zero_check_is_silent_before_hourly_heartbeat(
     settings: Settings,
 ) -> None:
+    configured = replace(settings, quiet_heartbeat=True, enable_daily_summary=False)
+    now = datetime(2026, 8, 7, 0, tzinfo=settings.timezone)
+    notifier = FakeNotifier()
+    service(configured, now, 0, notifier).run_once()
+    result = service(configured, now + timedelta(minutes=15), 0, notifier).run_once()
+    assert result.notifications == ()
+
+
+def test_heartbeat_survives_restart_and_uses_low_priority(
+    settings: Settings,
+) -> None:
+    configured = replace(settings, quiet_heartbeat=True, enable_daily_summary=False)
+    now = datetime(2026, 8, 7, 0, tzinfo=settings.timezone)
+    notifier = DetailedNotifier()
+    first = MonitorService(
+        configured,
+        scraper=FakeScraper(observation(now, 0)),  # type: ignore[arg-type]
+        notifier=notifier,  # type: ignore[arg-type]
+        store=StateStore(configured.state_path),
+    ).run_once()
+    restarted = MonitorService(
+        configured,
+        scraper=FakeScraper(observation(now + timedelta(minutes=15), 0)),  # type: ignore[arg-type]
+        notifier=notifier,  # type: ignore[arg-type]
+        store=StateStore(configured.state_path),
+    ).run_once()
+
+    assert first.notifications == ("heartbeat",)
+    assert restarted.notifications == ()
+    assert notifier.sent[0][0] == "JLPT N4 Monitor Active"
+    assert notifier.sent[0][2] == Priority.LOW == 2
+    assert notifier.sent[0][3] == ("white_check_mark", "clock1")
+    assert "Remaining: 0" in notifier.sent[0][1]
+    assert "Applied: 850 / 850" in notifier.sent[0][1]
+
+
+def test_positive_alerts_immediately_on_change_then_every_fifteen_minutes(
+    settings: Settings,
+) -> None:
+    settings = replace(
+        settings,
+        quiet_heartbeat=True,
+        enable_daily_summary=False,
+        available_alert_interval=900,
+        repeat_available_alerts=True,
+    )
     now = datetime(2026, 8, 5, 10, tzinfo=settings.timezone)
     notifier = FakeNotifier()
     first = service(settings, now, 0, notifier).run_once()
-    assert "heartbeat" in first.notifications
+    assert first.notifications == ("heartbeat",)
     opened = service(settings, now + timedelta(minutes=5), 3, notifier).run_once()
     assert opened.notifications == ("urgent",)
     quiet = service(settings, now + timedelta(minutes=9), 3, notifier).run_once()
     assert quiet.notifications == ()
-    repeat = service(settings, now + timedelta(minutes=15), 3, notifier).run_once()
+    repeat = service(settings, now + timedelta(minutes=20), 3, notifier).run_once()
     assert repeat.notifications == ("urgent",)
-    changed = service(settings, now + timedelta(minutes=16), 2, notifier).run_once()
+    changed = service(settings, now + timedelta(minutes=21), 2, notifier).run_once()
     assert changed.notifications == ("urgent",)
-    closed = service(settings, now + timedelta(minutes=30), 0, notifier).run_once()
+    closed = service(settings, now + timedelta(minutes=36), 0, notifier).run_once()
     assert "urgent" not in closed.notifications
 
 
@@ -146,12 +210,16 @@ def test_daily_summary_once(settings: Settings) -> None:
 
 
 def test_failed_notification_remains_due(settings: Settings) -> None:
+    settings = replace(settings, quiet_heartbeat=True, enable_daily_summary=False)
     now = datetime(2026, 8, 5, 10, tzinfo=settings.timezone)
     failing = FakeNotifier(fail=True)
-    assert service(settings, now, 5, failing).run_once().notifications == ()
+    assert service(settings, now, 0, failing).run_once().notifications == ()
     working = FakeNotifier()
-    result = service(settings, now + timedelta(minutes=5), 5, working).run_once()
-    assert set(result.notifications) == {"urgent", "heartbeat"}
+    result = service(settings, now + timedelta(minutes=15), 0, working).run_once()
+    assert result.notifications == ("heartbeat",)
+    failures = StateStore(settings.state_path).load()["notifications"]["failures"]
+    assert failures["count"] == 1
+    assert failures["last_kind"] == "heartbeat"
 
 
 def test_scrape_failure_updates_failure_statistics(settings: Settings) -> None:
@@ -228,19 +296,8 @@ def test_multi_level_alerts_include_required_fields_and_deduplicate(
         message for _, message, priority in notifier.sent if priority == 4
     ]
     assert len(urgent_messages) == 2
-    for level, session, message in (
-        ("N4", "Afternoon", urgent_messages[0]),
-        ("N2", "Forenoon", urgent_messages[1]),
-    ):
-        for expected in (
-            f"Level: {level}",
-            f"Session: {session}",
-            "Remaining:",
-            "Applied:",
-            "Total:",
-            f"Website: {settings.website_url}",
-            f"Timestamp: {now.isoformat()}",
-        ):
+    for message in urgent_messages:
+        for expected in ("Remaining:", "Applied:", "Register immediately."):
             assert expected in message
 
     assert run(now + timedelta(minutes=5), 3, 2) == ()

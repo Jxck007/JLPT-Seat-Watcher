@@ -185,10 +185,15 @@ def _daily_statistics(executions: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def _last_alert(executions: list[dict[str, Any]]) -> dict[str, Any]:
     for execution in reversed(executions):
         notifications = execution.get("notifications")
-        if isinstance(notifications, list) and notifications:
+        urgent = (
+            [item for item in notifications if str(item).startswith("urgent")]
+            if isinstance(notifications, list)
+            else []
+        )
+        if urgent:
             return {
                 "at": execution.get("executed_at"),
-                "type": ", ".join(str(item) for item in notifications),
+                "type": ", ".join(str(item) for item in urgent),
             }
     return {"at": None, "type": None}
 
@@ -258,6 +263,9 @@ def build_payloads(
     next_check = last_check + timedelta(seconds=check_interval) if last_check else None
     last_failure = statistics.get("last_failure_at")
     last_alert = _last_alert(executions)
+    last_seat_alert = _timestamp(notifications.get("last_urgent_at")) or _timestamp(
+        last_alert.get("at")
+    )
     now_local = now.astimezone(timezone)
     today = now_local.date()
     today_executions = [
@@ -304,11 +312,14 @@ def build_payloads(
     workflow_healthy = workflow_status.casefold() == "success"
     healthy = workflow_healthy and not stale and heartbeat_status != "overdue"
     failures = int(statistics.get("consecutive_failures", 0))
-    project_status = (
-        "green"
-        if healthy
-        else "red" if failures >= 3 or workflow_status == "failure" else "yellow"
-    )
+    if last_check is None:
+        monitor_status = "waiting"
+    elif failures >= 3 or workflow_status.casefold() == "failure":
+        monitor_status = "failed"
+    elif stale:
+        monitor_status = "delayed"
+    else:
+        monitor_status = "healthy"
     generated_at = now.astimezone(UTC).isoformat().replace("+00:00", "Z")
     last_check_iso = last_check.isoformat() if last_check else None
     next_check_iso = next_check.isoformat() if next_check else None
@@ -340,31 +351,34 @@ def build_payloads(
     }
     status = {
         "schema_version": SCHEMA_VERSION,
-        "generated_at": generated_at,
-        "current_remaining": current.get("remaining", current.get("value")),
+        "level": current.get("level", current.get("group", "N4")),
+        "session": current.get("session", current.get("label", "Afternoon")),
+        "remaining": current.get("remaining", current.get("value")),
         "applied": current.get("applied"),
         "total": current.get("total"),
+        "availability": (
+            "available"
+            if isinstance(current.get("remaining", current.get("value")), int | float)
+            and current.get("remaining", current.get("value")) > 0
+            else (
+                "full"
+                if isinstance(
+                    current.get("remaining", current.get("value")), int | float
+                )
+                else "unknown"
+            )
+        ),
         "last_check": last_check_iso,
-        "next_check": next_check_iso,
-        "execution_time_ms": latest.get("execution_time_ms"),
+        "next_expected_check": next_check_iso,
+        "check_interval_seconds": check_interval,
+        "heartbeat_interval_seconds": heartbeat_interval,
         "workflow_status": workflow_status,
-        "current_session": current.get("session", current.get("label", "Afternoon")),
-        "current_level": current.get("level", current.get("group", "N4")),
-        # Version 1 aliases keep older Pages clients compatible.
-        "project_status": project_status,
-        "updated_at": last_check_iso,
-        "current_exam": current.get("level", current.get("group", "N4")),
-        "seats": {
-            "remaining": current.get("remaining", current.get("value")),
-            "applied": current.get("applied"),
-            "total": current.get("total"),
-        },
-        "checks": {
-            "last_success_at": last_check_iso,
-            "next_check_at": next_check_iso,
-            "duration_ms": latest.get("execution_time_ms"),
-        },
-        "last_notification": last_alert,
+        "monitor_status": monitor_status,
+        "last_heartbeat": heartbeat_at.isoformat() if heartbeat_at else None,
+        "last_seat_alert": (last_seat_alert.isoformat() if last_seat_alert else None),
+        "heartbeat_priority": 2,
+        "seat_alert_priority": 4,
+        "updated_at": generated_at,
     }
     metrics = {
         "schema_version": SCHEMA_VERSION,
@@ -387,6 +401,7 @@ def build_payloads(
         "last_failure": last_failure,
         "workflow_status": workflow_status,
         "heartbeat_status": heartbeat_status,
+        "last_heartbeat_at": heartbeat_at.isoformat() if heartbeat_at else None,
         "stale": stale,
     }
     return {"status": status, "history": history, "metrics": metrics, "health": health}
@@ -399,7 +414,7 @@ def _parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--workflow-status", default=os.getenv("DASHBOARD_WORKFLOW_STATUS", "unknown")
     )
-    parser.add_argument("--check-interval", type=int, default=300)
+    parser.add_argument("--check-interval", type=int, default=900)
     parser.add_argument("--heartbeat-interval", type=int, default=3600)
     parser.add_argument("--timezone", default="Asia/Kolkata")
     parser.add_argument("--max-checks", type=int, default=MAX_CHECKS)

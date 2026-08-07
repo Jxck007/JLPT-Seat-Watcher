@@ -57,10 +57,14 @@ class MonitorEngine:
         *,
         observation: MonitorObservation | None = None,
         daily_statistics: dict[str, Any] | None = None,
+        state: dict[str, Any] | None = None,
+        now: datetime | None = None,
     ) -> bool:
         if not self.notifier.configured:
             hint = getattr(self.notifier, "configuration_hint", "selected provider")
             LOGGER.warning("Notification skipped because %s is not configured", hint)
+            if state is not None and now is not None:
+                self._record_notification_failure(state, kind, now)
             return False
         event = NotificationEvent(
             kind=kind,
@@ -75,7 +79,21 @@ class MonitorEngine:
             return True
         except NotificationError:
             LOGGER.exception("Notification failed", extra={"notification_type": kind})
+            if state is not None and now is not None:
+                self._record_notification_failure(state, kind, now)
             return False
+
+    @staticmethod
+    def _record_notification_failure(
+        state: dict[str, Any], kind: str, now: datetime
+    ) -> None:
+        notifications = state.setdefault("notifications", {})
+        failures = notifications.setdefault(
+            "failures", {"count": 0, "last_at": None, "last_kind": None}
+        )
+        failures["count"] = int(failures.get("count", 0)) + 1
+        failures["last_at"] = now.isoformat()
+        failures["last_kind"] = kind
 
     def _record_failure(self, now: datetime) -> None:
         with self.store.transaction() as state:
@@ -288,12 +306,17 @@ class MonitorEngine:
                 and self._previous_value(previous, observation)
                 != observation.current_value
             )
-            urgent_due = _is_due(
-                notifications["last_urgent_at"],
-                observation.checked_at,
-                self.settings.urgent_interval,
+            repeat_interval = getattr(
+                self.settings, "available_alert_interval", self.settings.urgent_interval
             )
-            if observation.available and (value_changed or urgent_due):
+            repeat_enabled = getattr(self.settings, "repeat_available_alerts", True)
+            urgent_due = _is_due(
+                notifications["last_urgent_at"], observation.checked_at, repeat_interval
+            )
+            first_available = previous is None and observation.available
+            if observation.available and (
+                value_changed or first_available or (repeat_enabled and urgent_due)
+            ):
                 kind = self._urgent_kind(observation, observations)
                 if self._send(
                     sent,
@@ -301,6 +324,8 @@ class MonitorEngine:
                     observations,
                     Priority.HIGH,
                     observation=observation,
+                    state=state,
+                    now=observation.checked_at,
                 ):
                     notifications["last_urgent_at"] = observation.checked_at.isoformat()
                     notifications["last_urgent_remaining"] = observation.current_value
@@ -333,15 +358,25 @@ class MonitorEngine:
             self._update_statistics(state, observations, now.date())
             notifications = state["notifications"]
 
-            if _is_due(
-                notifications["last_heartbeat_at"],
-                now,
-                self.settings.heartbeat_interval,
-            ) and self._send(
-                sent,
-                "heartbeat",
-                observations,
-                Priority.SILENT,
+            quiet_heartbeat = getattr(self.settings, "quiet_heartbeat", False)
+            heartbeat_allowed = not quiet_heartbeat or all(
+                item.current_value == 0 for item in observations
+            )
+            if (
+                heartbeat_allowed
+                and _is_due(
+                    notifications["last_heartbeat_at"],
+                    now,
+                    self.settings.heartbeat_interval,
+                )
+                and self._send(
+                    sent,
+                    "heartbeat",
+                    observations,
+                    Priority.LOW,
+                    state=state,
+                    now=now,
+                )
             ):
                 notifications["last_heartbeat_at"] = now.isoformat()
 
@@ -356,6 +391,8 @@ class MonitorEngine:
                 observations,
                 Priority.NORMAL,
                 daily_statistics=state["statistics"]["daily"],
+                state=state,
+                now=now,
             ):
                 notifications["last_daily_summary_date"] = now.date().isoformat()
 

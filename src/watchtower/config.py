@@ -142,6 +142,9 @@ class Settings:
     smtp_use_ssl: bool = False
     history_retention_days: int = 30
     adapter: str = "jlpt_chennai"
+    repeat_available_alerts: bool = True
+    available_alert_interval: int = 600
+    quiet_heartbeat: bool = False
 
     @property
     def data_dir(self) -> Path:
@@ -234,4 +237,9 @@ class Settings:
             smtp_to=_string_list(config, "smtp_to", "SMTP_TO"),
             smtp_use_tls=smtp_use_tls,
             smtp_use_ssl=smtp_use_ssl,
+            repeat_available_alerts=_boolean(config, "REPEAT_AVAILABLE_ALERTS", True),
+            available_alert_interval=_integer(
+                config, "AVAILABLE_ALERT_INTERVAL", 900, 60, 86400
+            ),
+            quiet_heartbeat=_boolean(config, "QUIET_HEARTBEAT", True),
         )
