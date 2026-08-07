@@ -37,7 +37,8 @@ def test_dashboard_guards_missing_nested_and_invalid_values() -> None:
     assert 'timeZone: "Asia/Kolkata"' in javascript
     assert '"Waiting for first successful check"' in javascript
     assert '"Not sent yet"' in javascript
-    assert '"No seat alert yet"' in javascript
+    assert '"No high alert yet"' in javascript
+    assert '"No max alert yet"' in javascript
     assert '"Temporarily unavailable"' in javascript
     assert "textContent" in javascript
     assert "innerHTML" not in javascript

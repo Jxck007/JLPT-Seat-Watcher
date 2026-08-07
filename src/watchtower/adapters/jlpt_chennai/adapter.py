@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import cast
 
 from watchtower.adapters.base import NotificationEvent, WebsiteAdapter
@@ -13,7 +13,7 @@ from watchtower.notifier import Notifier, Priority
 
 
 def _notification_time(value: datetime) -> str:
-    return value.strftime("%b %-d, %I:%M %p")
+    return value.strftime("%-I:%M %p")
 
 
 def _seat_alert_body(observation: SeatObservation) -> str:
@@ -22,19 +22,39 @@ def _seat_alert_body(observation: SeatObservation) -> str:
             f"Remaining: {observation.remaining}",
             f"Applied: {observation.applied} / {observation.total}",
             "",
-            "Register immediately.",
+            "REGISTER NOW",
         )
     )
 
 
-def _heartbeat_body(observation: SeatObservation, check_interval: int) -> str:
-    next_check = observation.checked_at + timedelta(seconds=check_interval)
+def _min_body(observation: SeatObservation) -> str:
     return "\n".join(
         (
             f"Remaining: {observation.remaining}",
             f"Applied: {observation.applied} / {observation.total}",
             f"Checked: {_notification_time(observation.checked_at)}",
-            f"Next check: {_notification_time(next_check)}",
+        )
+    )
+
+
+def _default_body(observation: SeatObservation) -> str:
+    return "\n".join(
+        (
+            f"Remaining: {observation.remaining}",
+            f"Applied: {observation.applied} / {observation.total}",
+            "Monitor: Healthy",
+            f"Checked: {_notification_time(observation.checked_at)}",
+        )
+    )
+
+
+def _max_alert_body(observation: SeatObservation) -> str:
+    return "\n".join(
+        (
+            f"Remaining: {observation.remaining}",
+            "",
+            "Seats have remained available for 6 hours.",
+            "Register immediately.",
         )
     )
 
@@ -89,24 +109,46 @@ class JlptChennaiAdapter(WebsiteAdapter[SeatObservation]):
     def notify(
         self, event: NotificationEvent[SeatObservation], notifier: Notifier
     ) -> None:
-        if event.kind.startswith("urgent"):
+        if event.kind.startswith(("high", "urgent")):
             if event.observation is None:
-                raise ValueError("Urgent JLPT notification requires an observation")
+                raise ValueError("High JLPT notification requires an observation")
             observation = event.observation
             notifier.send(
-                f"JLPT {observation.level} SEATS AVAILABLE",
+                f"🚨 JLPT {observation.level} SEATS AVAILABLE",
                 _seat_alert_body(observation),
                 event.priority,
                 tags=("rotating_light", "tada"),
             )
             return
 
-        if event.kind == "heartbeat":
+        if event.kind.startswith("max"):
+            if event.observation is None:
+                raise ValueError("Max JLPT notification requires an observation")
+            observation = event.observation
+            notifier.send(
+                f"🚨🚨 JLPT {observation.level} — SEATS STILL AVAILABLE",
+                _max_alert_body(observation),
+                event.priority,
+                tags=("rotating_light", "warning"),
+            )
+            return
+
+        if event.kind == "min":
             primary = event.observations[0]
             notifier.send(
-                f"JLPT {primary.level} Monitor Active",
-                _heartbeat_body(primary, self.settings.check_interval),
-                Priority.LOW,
+                f"JLPT {primary.level} Check",
+                _min_body(primary),
+                event.priority,
+                tags=("mag_right",),
+            )
+            return
+
+        if event.kind in {"default", "heartbeat"}:
+            primary = event.observations[0]
+            notifier.send(
+                f"JLPT {primary.level} — Still Monitoring",
+                _default_body(primary),
+                event.priority,
                 tags=("white_check_mark", "clock1"),
             )
             return
@@ -119,7 +161,7 @@ class JlptChennaiAdapter(WebsiteAdapter[SeatObservation]):
             body = (
                 f"Checks today: {daily.get('checks', 0)}\n"
                 f"Average website latency: {latency:.0f} ms\n\n"
-                f"{_heartbeat_body(observation, self.settings.check_interval)}"
+                f"{_default_body(observation)}"
             )
             notifier.send(
                 "JLPT Monitor Daily Summary",

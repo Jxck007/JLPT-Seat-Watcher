@@ -21,7 +21,7 @@ def _execution(checked_at: datetime, remaining: int = 2) -> dict[str, object]:
         "execution_time_ms": 250.0,
         "latency_ms": 125.0,
         "notification_count": 1,
-        "notifications": ["heartbeat"],
+        "notifications": ["min"],
         "observations": [observation],
         "seats": [observation],
     }
@@ -67,8 +67,10 @@ def test_public_contracts_are_live_bounded_and_secret_free(tmp_path: Path) -> No
         "current": checks[0]["observations"][0],
         "history": {"executions": checks},
         "notifications": {
-            "last_heartbeat_at": now.isoformat(),
-            "last_urgent_at": (now - timedelta(hours=2)).isoformat(),
+            "last_min_notification_at": (now - timedelta(minutes=15)).isoformat(),
+            "last_default_notification_at": now.isoformat(),
+            "last_high_alert_at": (now - timedelta(hours=2)).isoformat(),
+            "last_max_alert_at": (now - timedelta(hours=8)).isoformat(),
         },
         "statistics": {
             "checks_total": 10,
@@ -95,14 +97,25 @@ def test_public_contracts_are_live_bounded_and_secret_free(tmp_path: Path) -> No
         == (now + timedelta(minutes=15)).isoformat()
     )
     assert payloads["status"]["check_interval_seconds"] == 900
-    assert payloads["status"]["heartbeat_interval_seconds"] == 3600
-    assert payloads["status"]["heartbeat_priority"] == 2
-    assert payloads["status"]["seat_alert_priority"] == 4
+    assert payloads["status"]["min_notification_interval_seconds"] == 900
+    assert payloads["status"]["default_notification_interval_seconds"] == 3600
+    assert payloads["status"]["max_alert_interval_seconds"] == 21600
+    assert payloads["status"]["min_priority"] == 1
+    assert payloads["status"]["default_priority"] == 3
+    assert payloads["status"]["high_priority"] == 4
+    assert payloads["status"]["max_priority"] == 5
     assert payloads["status"]["availability"] == "available"
     assert payloads["status"]["monitor_status"] == "healthy"
-    assert payloads["status"]["last_heartbeat"] == now.isoformat()
     assert (
-        payloads["status"]["last_seat_alert"] == (now - timedelta(hours=2)).isoformat()
+        payloads["status"]["last_min_notification"]
+        == (now - timedelta(minutes=15)).isoformat()
+    )
+    assert payloads["status"]["last_default_notification"] == now.isoformat()
+    assert (
+        payloads["status"]["last_high_alert"] == (now - timedelta(hours=2)).isoformat()
+    )
+    assert (
+        payloads["status"]["last_max_alert"] == (now - timedelta(hours=8)).isoformat()
     )
     assert set(payloads["status"]) == {
         "schema_version",
@@ -115,13 +128,19 @@ def test_public_contracts_are_live_bounded_and_secret_free(tmp_path: Path) -> No
         "last_check",
         "next_expected_check",
         "check_interval_seconds",
-        "heartbeat_interval_seconds",
+        "min_notification_interval_seconds",
+        "default_notification_interval_seconds",
+        "max_alert_interval_seconds",
         "workflow_status",
         "monitor_status",
-        "last_heartbeat",
-        "last_seat_alert",
-        "heartbeat_priority",
-        "seat_alert_priority",
+        "last_min_notification",
+        "last_default_notification",
+        "last_high_alert",
+        "last_max_alert",
+        "min_priority",
+        "default_priority",
+        "high_priority",
+        "max_priority",
         "updated_at",
     }
     assert payloads["metrics"]["checks_today"] == 3
@@ -140,8 +159,10 @@ def test_public_status_contract_handles_first_run_and_stale_state(
     status = json.loads((docs / "status.json").read_text(encoding="utf-8"))
     assert status["monitor_status"] == "waiting"
     assert status["remaining"] is None
-    assert status["last_heartbeat"] is None
-    assert status["last_seat_alert"] is None
+    assert status["last_min_notification"] is None
+    assert status["last_default_notification"] is None
+    assert status["last_high_alert"] is None
+    assert status["last_max_alert"] is None
 
     stale_check = now - timedelta(hours=1)
     state = {
@@ -167,7 +188,7 @@ def test_publisher_writes_all_dashboard_files(tmp_path: Path) -> None:
     state = {
         "current": _execution(now)["observations"][0],
         "history": {"executions": [_execution(now)]},
-        "notifications": {"last_heartbeat_at": now.isoformat()},
+        "notifications": {"last_default_notification_at": now.isoformat()},
         "statistics": {
             "checks_total": 1,
             "successes": 1,

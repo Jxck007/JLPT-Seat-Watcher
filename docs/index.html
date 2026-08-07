@@ -42,20 +42,23 @@
           <div><dt>Next expected check</dt><dd id="next-check">Waiting for first successful check</dd></div>
         </dl>
         <ul class="schedule-list" aria-label="Notification schedule">
-          <li>Checks every 15 minutes</li>
-          <li>Quiet update every 1 hour</li>
-          <li>High-priority alert when seats appear</li>
+          <li>Check interval: 15 minutes</li>
+          <li>15-minute update: MIN priority</li>
+          <li>Hourly update: DEFAULT priority</li>
+          <li>Seats available: HIGH priority</li>
+          <li>Still available after 6 hours: MAX priority</li>
         </ul>
       </section>
 
       <section class="notification-card" aria-labelledby="notification-heading">
         <h2 id="notification-heading">Notifications</h2>
         <dl class="detail-list">
-          <div><dt>Last quiet heartbeat</dt><dd id="last-heartbeat">Not sent yet</dd></div>
-          <div><dt>Last seat alert</dt><dd id="last-alert">No seat alert yet</dd></div>
+          <div><dt>Last 15-minute notification</dt><dd id="last-min">Not sent yet</dd></div>
+          <div><dt>Last hourly notification</dt><dd id="last-default">Not sent yet</dd></div>
+          <div><dt>Last high alert</dt><dd id="last-high">No high alert yet</dd></div>
+          <div><dt>Last max alert</dt><dd id="last-max">No max alert yet</dd></div>
           <div><dt>Provider</dt><dd>ntfy</dd></div>
-          <div><dt>Heartbeat</dt><dd>Low priority</dd></div>
-          <div><dt>Seat alert</dt><dd>High priority</dd></div>
+          <div><dt>Cadence</dt><dd>MIN 1 · DEFAULT 3 · HIGH 4 · MAX 5</dd></div>
         </dl>
       </section>
 

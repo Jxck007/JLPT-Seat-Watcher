@@ -18,7 +18,8 @@ def test_monitor_workflow_contract() -> None:
     assert "scripts/publish_dashboard.py" in raw
     assert "--check-interval 900" in raw
     assert 'HEARTBEAT_INTERVAL: "3600"' in raw
-    assert 'AVAILABLE_ALERT_INTERVAL: "900"' in raw
+    assert 'MAX_ALERT_INTERVAL: "21600"' in raw
+    assert "--max-alert-interval 21600" in raw
     assert "--max-checks 500" in raw
     assert "git push origin HEAD:main" in raw
     for filename in ("status.json", "history.json", "metrics.json", "health.json"):
@@ -94,8 +95,8 @@ def test_dashboard_assets_use_safe_public_data_contracts() -> None:
     assert "Open JLPT Registration" in html
     assert ">Refresh</button>" in html
     assert "remaining" in html
-    assert "last-heartbeat" in html
-    assert "last-alert" in html
+    for field in ("last-min", "last-default", "last-high", "last-max"):
+        assert field in html
     for filename in ("status.json", "history.json", "metrics.json", "health.json"):
         assert f'"{filename}"' in javascript
         assert Path("docs", filename).is_file()

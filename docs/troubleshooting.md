@@ -64,8 +64,8 @@ No. It reads the public home page and links the notification to the official
 website. Registration, authentication, payment, and form submission remain
 manual.
 
-## Are heartbeats duplicated with urgent alerts?
+## Can one run send several seat-status notifications?
 
-Heartbeat and availability clocks are independent. Both can be due during one
-cycle because they communicate different facts: operational liveness and seat
-availability. Each type is deduplicated against its own persisted timestamp.
+Normally no. The engine selects one notification using MAX, HIGH, DEFAULT, then
+MIN precedence. Failed deliveries do not advance their successful timestamp, so
+the selected notification remains eligible for retry.

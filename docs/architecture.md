@@ -76,11 +76,12 @@ subclass.
 
 ## State schema
 
-`data/state.json` contains a schema version, per-target state,
-independent urgent notification timestamps, shared heartbeat and summary
-timestamps, and operational statistics. The legacy per-level and top-level
-fields mirror the first matching target for backward compatibility. Existing
-schema-v1 N4 and per-level state migrate in place on the next successful run.
+`data/state.json` contains a schema version, per-target state, MIN and DEFAULT
+cadence timestamps, per-target HIGH and MAX alert state, the continuous
+availability timer, and operational statistics. The legacy per-level and
+top-level fields mirror the first matching target for backward compatibility.
+Existing schema-v1 N4 and per-level state migrate in place on the next
+successful run.
 
 Each successful cycle appends one execution record containing its timestamp,
 complete duration, maximum website latency, successful notification count, and
@@ -99,7 +100,7 @@ After each monitor run, `scripts/publish_dashboard.py` reads existing state and
 emits `docs/status.json`, `docs/history.json`, `docs/metrics.json`, and
 `docs/health.json`. It merges committed public history, retains the latest 500
 checks, and writes the files atomically. The monitor workflow commits these safe
-outputs to `main`; the separate Pages workflow only deploys `docs/`. Provider
+outputs to `main`; GitHub Pages deploys `docs/` directly from the branch. Provider
 credentials and private runtime configuration never enter the Pages artifact.
 
 If JSON or its schema is invalid, normal monitor operation moves it to a unique

@@ -52,6 +52,20 @@ def test_low_priority_ntfy_heartbeat_uses_click_url(settings: Settings) -> None:
 
 
 @responses.activate
+def test_ntfy_status_priorities_map_to_exact_header_values(settings: Settings) -> None:
+    responses.post("https://ntfy.test/test-topic", status=200)
+    responses.post("https://ntfy.test/test-topic", status=200)
+    responses.post("https://ntfy.test/test-topic", status=200)
+    for priority in (Priority.MIN, Priority.DEFAULT, Priority.MAX):
+        NtfyNotifier(settings).send("JLPT N4", "status", priority)
+    assert [call.request.headers["Priority"] for call in responses.calls] == [
+        "1",
+        "3",
+        "5",
+    ]
+
+
+@responses.activate
 def test_retries_without_exposing_topic(settings: Settings) -> None:
     responses.post("https://ntfy.test/test-topic", status=503)
     responses.post("https://ntfy.test/test-topic", status=500)

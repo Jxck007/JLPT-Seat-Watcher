@@ -17,7 +17,7 @@ def settings(tmp_path: Path) -> Settings:
         ntfy_server="https://ntfy.test",
         ntfy_token="",
         timezone=ZoneInfo("Asia/Kolkata"),
-        check_interval=300,
+        check_interval=900,
         heartbeat_interval=3600,
         urgent_interval=600,
         log_level="INFO",
@@ -25,7 +25,7 @@ def settings(tmp_path: Path) -> Settings:
         max_retries=3,
         enable_screenshot=True,
         enable_playwright=True,
-        enable_daily_summary=True,
+        enable_daily_summary=False,
         daily_summary_hour=20,
         log_retention_days=30,
     )
