@@ -1,5 +1,5 @@
 {
-  "count": 4,
+  "count": 5,
   "daily_statistics": [
     {
       "average_execution_time_ms": 1480.62,
@@ -21,11 +21,11 @@
       ]
     },
     {
-      "average_execution_time_ms": 1388.01,
-      "average_latency_ms": 1142.27,
+      "average_execution_time_ms": 1438.49,
+      "average_latency_ms": 1225.14,
       "date": "2026-08-07",
-      "executions": 2,
-      "notification_count": 2,
+      "executions": 3,
+      "notification_count": 3,
       "targets": [
         {
           "last_applied": 850,
@@ -172,9 +172,42 @@
         "run_url": "https://github.com/Jxck007/JLPT-Seat-Watcher/actions/runs/31144947796",
         "status": "success"
       }
+    },
+    {
+      "executed_at": "2026-08-07T10:54:14.303694+05:30",
+      "execution_time_ms": 1539.45,
+      "latency_ms": 1390.87,
+      "notification_count": 1,
+      "notifications": [
+        "heartbeat"
+      ],
+      "observations": [
+        {
+          "applied": 850,
+          "level": "N4",
+          "remaining": 0,
+          "session": "Afternoon",
+          "total": 850
+        }
+      ],
+      "seats": [
+        {
+          "applied": 850,
+          "level": "N4",
+          "remaining": 0,
+          "session": "Afternoon",
+          "total": 850
+        }
+      ],
+      "workflow": {
+        "run_id": "31150451732",
+        "run_number": "21",
+        "run_url": "https://github.com/Jxck007/JLPT-Seat-Watcher/actions/runs/31150451732",
+        "status": "success"
+      }
     }
   ],
-  "generated_at": "2026-08-07T03:38:39.380861Z",
+  "generated_at": "2026-08-07T05:24:15.064346Z",
   "max_checks": 500,
   "schema_version": 2,
   "workflow_runs": [
@@ -219,6 +252,13 @@
       "run_url": "https://github.com/Jxck007/JLPT-Seat-Watcher/actions/runs/31144947796",
       "status": "success",
       "updated_at": "2026-08-07T03:38:39.380861Z"
+    },
+    {
+      "run_id": "31150451732",
+      "run_number": "21",
+      "run_url": "https://github.com/Jxck007/JLPT-Seat-Watcher/actions/runs/31150451732",
+      "status": "success",
+      "updated_at": "2026-08-07T05:24:15.064346Z"
     }
   ]
 }
