@@ -1,5 +1,5 @@
 {
-  "count": 42,
+  "count": 43,
   "daily_statistics": [
     {
       "average_execution_time_ms": 1480.62,
@@ -40,11 +40,11 @@
       ]
     },
     {
-      "average_execution_time_ms": 1429.2,
-      "average_latency_ms": 1293.25,
+      "average_execution_time_ms": 1432.25,
+      "average_latency_ms": 1296.49,
       "date": "2026-08-08",
-      "executions": 25,
-      "notification_count": 14,
+      "executions": 26,
+      "notification_count": 15,
       "targets": [
         {
           "last_applied": 850,
@@ -1415,19 +1415,45 @@
         "run_url": "https://github.com/Jxck007/JLPT-Seat-Watcher/actions/runs/31267346651",
         "status": "success"
       }
+    },
+    {
+      "executed_at": "2026-08-08T22:43:00.560584+05:30",
+      "execution_time_ms": 1508.34,
+      "latency_ms": 1377.4,
+      "notification_count": 1,
+      "notifications": [
+        "heartbeat"
+      ],
+      "observations": [
+        {
+          "applied": 850,
+          "level": "N4",
+          "remaining": 0,
+          "session": "Afternoon",
+          "total": 850
+        }
+      ],
+      "seats": [
+        {
+          "applied": 850,
+          "level": "N4",
+          "remaining": 0,
+          "session": "Afternoon",
+          "total": 850
+        }
+      ],
+      "workflow": {
+        "run_id": "31268861685",
+        "run_number": "61",
+        "run_url": "https://github.com/Jxck007/JLPT-Seat-Watcher/actions/runs/31268861685",
+        "status": "success"
+      }
     }
   ],
-  "generated_at": "2026-08-08T16:36:38.903854Z",
+  "generated_at": "2026-08-08T17:13:01.273891Z",
   "max_checks": 500,
   "schema_version": 2,
   "workflow_runs": [
-    {
-      "run_id": "31226716965",
-      "run_number": "41",
-      "run_url": "https://github.com/Jxck007/JLPT-Seat-Watcher/actions/runs/31226716965",
-      "status": "success",
-      "updated_at": "2026-08-07T23:18:53.681889Z"
-    },
     {
       "run_id": "31228815723",
       "run_number": "42",
@@ -1560,6 +1586,13 @@
       "run_url": "https://github.com/Jxck007/JLPT-Seat-Watcher/actions/runs/31267346651",
       "status": "success",
       "updated_at": "2026-08-08T16:36:38.903854Z"
+    },
+    {
+      "run_id": "31268861685",
+      "run_number": "61",
+      "run_url": "https://github.com/Jxck007/JLPT-Seat-Watcher/actions/runs/31268861685",
+      "status": "success",
+      "updated_at": "2026-08-08T17:13:01.273891Z"
     }
   ]
 }
