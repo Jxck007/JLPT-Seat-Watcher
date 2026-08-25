@@ -1,10 +1,10 @@
 {
-  "generated_at": "2026-08-25T18:04:58.564372Z",
+  "generated_at": "2026-08-25T18:58:08.949496Z",
   "healthy": true,
   "heartbeat_status": "healthy",
   "last_failure": null,
   "last_heartbeat_at": "2026-08-25T23:34:57.750295+05:30",
-  "last_success": "2026-08-25T23:34:57.750295+05:30",
+  "last_success": "2026-08-26T00:28:07.557570+05:30",
   "schema_version": 2,
   "stale": false,
   "workflow_status": "success"
