@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-08-31T05:56:55.333816Z",
-  "healthy": true,
-  "heartbeat_status": "healthy",
-  "last_failure": null,
+  "generated_at": "2026-08-31T13:24:25.626259Z",
+  "healthy": false,
+  "heartbeat_status": "overdue",
+  "last_failure": "2026-08-31T18:54:24.502543+05:30",
   "last_heartbeat_at": "2026-08-31T11:26:54.340677+05:30",
   "last_success": "2026-08-31T11:26:54.340677+05:30",
   "schema_version": 2,
-  "stale": false,
-  "workflow_status": "success"
+  "stale": true,
+  "workflow_status": "failure"
 }
