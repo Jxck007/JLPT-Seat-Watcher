@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-09-02T20:07:29.934837Z",
+  "generated_at": "2026-09-02T22:39:35.945807Z",
   "healthy": false,
   "heartbeat_status": "overdue",
-  "last_failure": "2026-09-03T01:37:28.920908+05:30",
+  "last_failure": "2026-09-03T04:09:35.258300+05:30",
   "last_heartbeat_at": "2026-08-31T11:26:54.340677+05:30",
   "last_success": "2026-08-31T11:26:54.340677+05:30",
   "schema_version": 2,
