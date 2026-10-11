@@ -16445,17 +16445,10 @@
       }
     }
   ],
-  "generated_at": "2026-10-11T07:40:59.559497Z",
+  "generated_at": "2026-10-11T14:23:15.697599Z",
   "max_checks": 500,
   "schema_version": 2,
   "workflow_runs": [
-    {
-      "run_id": "37553462866",
-      "run_number": "853",
-      "run_url": "https://github.com/Jxck007/JLPT-Seat-Watcher/actions/runs/37553462866",
-      "status": "failure",
-      "updated_at": "2026-10-07T00:44:01.767999Z"
-    },
     {
       "run_id": "37582152819",
       "run_number": "854",
@@ -16588,6 +16581,13 @@
       "run_url": "https://github.com/Jxck007/JLPT-Seat-Watcher/actions/runs/38122172648",
       "status": "failure",
       "updated_at": "2026-10-11T07:40:59.559497Z"
+    },
+    {
+      "run_id": "38146934435",
+      "run_number": "873",
+      "run_url": "https://github.com/Jxck007/JLPT-Seat-Watcher/actions/runs/38146934435",
+      "status": "failure",
+      "updated_at": "2026-10-11T14:23:15.697599Z"
     }
   ]
 }
