@@ -20,61 +20,62 @@ SMTP host, port, sender, recipients, and TLS mode are configured in
 `config.yaml`. Secrets and webhook URLs must remain in `.env` or deployment
 secrets.
 
-## Seat availability
+## Every successful 15-minute check
 
-**Title:** JLPT N4 SEATS AVAILABLE
-**Priority:** High
+**Title:** JLPT N4 Check
+**Priority:** 1 / min
 
 ```text
-Level: N4
-Session: Afternoon
+Remaining: 0
+Applied: 850 / 850
+Checked: 12:15 PM
+```
+
+## Hourly replacement
+
+**Title:** JLPT N4 — Still Monitoring
+**Priority:** 3 / default
+
+```text
+Remaining: 0
+Applied: 850 / 850
+Monitor: Healthy
+Checked: 1:00 PM
+```
+
+The hourly notification replaces the normal MIN notification for that run.
+
+## Seat availability
+
+**Title:** 🚨 JLPT N4 SEATS AVAILABLE
+**Priority:** 4 / high
+
+```text
 Remaining: 3
-Applied: 847
-Total: 850
-Website: https://www.jlptchennaiindia.com/
-Timestamp: 2026-08-05T10:05:00+05:30
+Applied: 847 / 850
+
+REGISTER NOW
 ```
 
 This is sent immediately when remaining seats become positive, whenever that
-positive count changes, and at ten-minute intervals while it remains positive.
-Each watched level/session target has an independent persisted alert clock, so
-processing multiple levels or Both mode does not create duplicate alerts.
+positive count changes. It replaces the lower-priority notification for that
+run.
 
-## Silent heartbeat
+## Six-hour availability escalation
 
-**Title:** JLPT Monitor Running
-**Priority:** Min/silent
-
-```text
-Level: N4
-Session: Afternoon
-Remaining: 0
-Applied: 850
-Total: 850
-Website: https://www.jlptchennaiindia.com/
-Timestamp: 2026-08-05T11:00:00+05:30
-```
-
-When several targets are watched, one heartbeat contains one complete block per
-level/session pair.
-
-## Daily summary
-
-**Title:** JLPT Monitor Daily Summary  
-**Priority:** Default/normal
+**Title:** 🚨🚨 JLPT N4 — SEATS STILL AVAILABLE
+**Priority:** 5 / max
 
 ```text
-Checks today: 120
-Average website latency: 416 ms
+Remaining: 3
 
-Level: N4
-Session: Afternoon
-Remaining: 0
-Applied: 850
-Total: 850
-Website: https://www.jlptchennaiindia.com/
-Timestamp: 2026-08-05T20:00:00+05:30
+Seats have remained available for 6 hours.
+Register immediately.
 ```
+
+MAX repeats at most once every six hours while availability remains continuously
+positive. Returning to zero resets the timer. The selection order is MAX, HIGH,
+DEFAULT, then MIN, so only one seat-status notification is sent per run.
 
 ## Manual test
 

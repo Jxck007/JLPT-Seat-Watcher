@@ -185,15 +185,19 @@ def _daily_statistics(executions: list[dict[str, Any]]) -> list[dict[str, Any]]:
 def _last_alert(executions: list[dict[str, Any]]) -> dict[str, Any]:
     for execution in reversed(executions):
         notifications = execution.get("notifications")
-        urgent = (
-            [item for item in notifications if str(item).startswith("urgent")]
+        alerts = (
+            [
+                item
+                for item in notifications
+                if str(item).startswith(("high", "max", "urgent"))
+            ]
             if isinstance(notifications, list)
             else []
         )
-        if urgent:
+        if alerts:
             return {
                 "at": execution.get("executed_at"),
-                "type": ", ".join(str(item) for item in urgent),
+                "type": ", ".join(str(item) for item in alerts),
             }
     return {"at": None, "type": None}
 
@@ -239,6 +243,7 @@ def build_payloads(
     workflow_status: str,
     check_interval: int,
     heartbeat_interval: int,
+    max_alert_interval: int,
     timezone: ZoneInfo,
     maximum: int = MAX_CHECKS,
     run_metadata: dict[str, Any] | None = None,
@@ -263,9 +268,15 @@ def build_payloads(
     next_check = last_check + timedelta(seconds=check_interval) if last_check else None
     last_failure = statistics.get("last_failure_at")
     last_alert = _last_alert(executions)
-    last_seat_alert = _timestamp(notifications.get("last_urgent_at")) or _timestamp(
-        last_alert.get("at")
+    last_min = _timestamp(notifications.get("last_min_notification_at"))
+    last_default = _timestamp(
+        notifications.get("last_default_notification_at")
+        or notifications.get("last_heartbeat_at")
     )
+    last_high = _timestamp(
+        notifications.get("last_high_alert_at") or notifications.get("last_urgent_at")
+    )
+    last_max = _timestamp(notifications.get("last_max_alert_at"))
     now_local = now.astimezone(timezone)
     today = now_local.date()
     today_executions = [
@@ -296,21 +307,20 @@ def build_payloads(
         else None
     )
 
-    heartbeat_at = _timestamp(notifications.get("last_heartbeat_at"))
-    if heartbeat_at is None:
-        heartbeat_status = "pending"
-    elif now - heartbeat_at.astimezone(UTC) <= timedelta(
+    if last_default is None:
+        notification_status = "pending"
+    elif now - last_default.astimezone(UTC) <= timedelta(
         seconds=heartbeat_interval * 2
     ):
-        heartbeat_status = "healthy"
+        notification_status = "healthy"
     else:
-        heartbeat_status = "overdue"
+        notification_status = "overdue"
 
     stale = last_check is None or now - last_check.astimezone(UTC) > timedelta(
         seconds=check_interval * 3
     )
     workflow_healthy = workflow_status.casefold() == "success"
-    healthy = workflow_healthy and not stale and heartbeat_status != "overdue"
+    healthy = workflow_healthy and not stale and notification_status != "overdue"
     failures = int(statistics.get("consecutive_failures", 0))
     if last_check is None:
         monitor_status = "waiting"
@@ -371,13 +381,21 @@ def build_payloads(
         "last_check": last_check_iso,
         "next_expected_check": next_check_iso,
         "check_interval_seconds": check_interval,
-        "heartbeat_interval_seconds": heartbeat_interval,
+        "min_notification_interval_seconds": check_interval,
+        "default_notification_interval_seconds": heartbeat_interval,
+        "max_alert_interval_seconds": max_alert_interval,
         "workflow_status": workflow_status,
         "monitor_status": monitor_status,
-        "last_heartbeat": heartbeat_at.isoformat() if heartbeat_at else None,
-        "last_seat_alert": (last_seat_alert.isoformat() if last_seat_alert else None),
-        "heartbeat_priority": 2,
-        "seat_alert_priority": 4,
+        "last_min_notification": last_min.isoformat() if last_min else None,
+        "last_default_notification": (
+            last_default.isoformat() if last_default else None
+        ),
+        "last_high_alert": last_high.isoformat() if last_high else None,
+        "last_max_alert": last_max.isoformat() if last_max else None,
+        "min_priority": 1,
+        "default_priority": 3,
+        "high_priority": 4,
+        "max_priority": 5,
         "updated_at": generated_at,
     }
     metrics = {
@@ -400,8 +418,10 @@ def build_payloads(
         "last_success": last_check_iso,
         "last_failure": last_failure,
         "workflow_status": workflow_status,
-        "heartbeat_status": heartbeat_status,
-        "last_heartbeat_at": heartbeat_at.isoformat() if heartbeat_at else None,
+        "notification_status": notification_status,
+        "last_default_notification_at": (
+            last_default.isoformat() if last_default else None
+        ),
         "stale": stale,
     }
     return {"status": status, "history": history, "metrics": metrics, "health": health}
@@ -416,6 +436,7 @@ def _parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--check-interval", type=int, default=900)
     parser.add_argument("--heartbeat-interval", type=int, default=3600)
+    parser.add_argument("--max-alert-interval", type=int, default=21600)
     parser.add_argument("--timezone", default="Asia/Kolkata")
     parser.add_argument("--max-checks", type=int, default=MAX_CHECKS)
     return parser
@@ -446,6 +467,7 @@ def main() -> int:
         workflow_status=args.workflow_status,
         check_interval=args.check_interval,
         heartbeat_interval=args.heartbeat_interval,
+        max_alert_interval=args.max_alert_interval,
         timezone=ZoneInfo(args.timezone),
         maximum=max(1, args.max_checks),
         run_metadata=run_metadata if run_url else None,

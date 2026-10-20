@@ -178,6 +178,32 @@ class MonitorEngine:
                 "previous": legacy_previous if migrate_legacy else None,
                 "current": legacy_current if migrate_legacy else None,
                 "notifications": {
+                    "last_high_alert_at": (
+                        group_notifications.get("last_high_alert_at")
+                        or group_notifications.get("last_urgent_at")
+                        if migrate_legacy
+                        else None
+                    ),
+                    "last_high_alert_remaining": (
+                        group_notifications.get("last_high_alert_remaining")
+                        if group_notifications.get("last_high_alert_remaining")
+                        is not None
+                        else (
+                            group_notifications.get("last_urgent_remaining")
+                            if migrate_legacy
+                            else None
+                        )
+                    ),
+                    "availability_started_at": (
+                        group_notifications.get("availability_started_at")
+                        if migrate_legacy
+                        else None
+                    ),
+                    "last_max_alert_at": (
+                        group_notifications.get("last_max_alert_at")
+                        if migrate_legacy
+                        else None
+                    ),
                     "last_urgent_at": (
                         group_notifications.get("last_urgent_at")
                         if migrate_legacy
@@ -259,18 +285,19 @@ class MonitorEngine:
             )
 
     @staticmethod
-    def _urgent_kind(
+    def _notification_kind(
+        base: str,
         observation: MonitorObservation,
         observations: tuple[MonitorObservation, ...],
     ) -> str:
         if len(observations) == 1:
-            return "urgent"
+            return base
         group_count = sum(
             item.group_key == observation.group_key for item in observations
         )
         if group_count > 1:
-            return f"urgent:{observation.group_key}:{observation.target_label}"
-        return f"urgent:{observation.group_key}"
+            return f"{base}:{observation.group_key}:{observation.target_label}"
+        return f"{base}:{observation.group_key}"
 
     @staticmethod
     def _previous_value(
@@ -287,13 +314,18 @@ class MonitorEngine:
                     return values[key]
         return None
 
-    def _send_urgent_alerts(
+    def _select_availability_notification(
         self,
         state: dict[str, Any],
         observations: tuple[MonitorObservation, ...],
-        sent: list[str],
-    ) -> bool:
+    ) -> tuple[
+        bool,
+        tuple[str, MonitorObservation, dict[str, Any], Priority] | None,
+    ]:
         changed_any = False
+        high_candidates: list[tuple[MonitorObservation, dict[str, Any]]] = []
+        max_candidates: list[tuple[MonitorObservation, dict[str, Any]]] = []
+        max_interval = getattr(self.settings, "max_alert_interval", 21600)
         for observation in observations:
             target_state = self._target_state(state, observation)
             previous = target_state.get("current")
@@ -306,30 +338,45 @@ class MonitorEngine:
                 and self._previous_value(previous, observation)
                 != observation.current_value
             )
-            repeat_interval = getattr(
-                self.settings, "available_alert_interval", self.settings.urgent_interval
+            if not observation.available:
+                notifications["availability_started_at"] = None
+                notifications["last_max_alert_at"] = None
+                notifications["last_high_alert_remaining"] = None
+                continue
+
+            if notifications.get("availability_started_at") is None:
+                notifications["availability_started_at"] = (
+                    observation.checked_at.isoformat()
+                )
+            availability_started = _parse_time(
+                notifications.get("availability_started_at")
             )
-            repeat_enabled = getattr(self.settings, "repeat_available_alerts", True)
-            urgent_due = _is_due(
-                notifications["last_urgent_at"], observation.checked_at, repeat_interval
+            max_due = bool(
+                availability_started
+                and observation.checked_at - availability_started
+                >= timedelta(seconds=max_interval)
+                and _is_due(
+                    notifications.get("last_max_alert_at"),
+                    observation.checked_at,
+                    max_interval,
+                )
             )
-            first_available = previous is None and observation.available
-            if observation.available and (
-                value_changed or first_available or (repeat_enabled and urgent_due)
-            ):
-                kind = self._urgent_kind(observation, observations)
-                if self._send(
-                    sent,
-                    kind,
-                    observations,
-                    Priority.HIGH,
-                    observation=observation,
-                    state=state,
-                    now=observation.checked_at,
-                ):
-                    notifications["last_urgent_at"] = observation.checked_at.isoformat()
-                    notifications["last_urgent_remaining"] = observation.current_value
-        return changed_any
+            if max_due:
+                max_candidates.append((observation, notifications))
+
+            last_high_remaining = notifications.get("last_high_alert_remaining")
+            if value_changed or last_high_remaining != observation.current_value:
+                high_candidates.append((observation, notifications))
+
+        candidates = max_candidates or high_candidates
+        if not candidates:
+            return changed_any, None
+        observation, notifications = candidates[0]
+        priority = Priority.MAX if max_candidates else Priority.HIGH
+        kind = self._notification_kind(
+            "max" if max_candidates else "high", observation, observations
+        )
+        return changed_any, (kind, observation, notifications, priority)
 
     def run_once(self) -> MonitorResult[MonitorObservation]:
         started = time.monotonic()
@@ -343,7 +390,9 @@ class MonitorEngine:
         now = primary.checked_at
         sent: list[str] = []
         with self.store.transaction() as state:
-            changed = self._send_urgent_alerts(state, observations, sent)
+            changed, availability_event = self._select_availability_notification(
+                state, observations
+            )
             groups = state.setdefault("levels", {})
             mirrored_groups: set[str] = set()
             for observation in observations:
@@ -355,54 +404,88 @@ class MonitorEngine:
             primary_state = self._target_state(state, primary)
             state["previous"] = primary_state["previous"]
             state["current"] = primary_state["current"]
+            state["last_check"] = now.isoformat()
             self._update_statistics(state, observations, now.date())
             notifications = state["notifications"]
 
-            quiet_heartbeat = getattr(self.settings, "quiet_heartbeat", False)
-            heartbeat_allowed = not quiet_heartbeat or all(
-                item.current_value == 0 for item in observations
-            )
-            if (
-                heartbeat_allowed
-                and _is_due(
-                    notifications["last_heartbeat_at"],
-                    now,
-                    self.settings.heartbeat_interval,
+            notification_selected = availability_event is not None
+            if availability_event is not None:
+                kind, event_observation, target_notifications, priority = (
+                    availability_event
                 )
-                and self._send(
+                delivered = self._send(
                     sent,
-                    "heartbeat",
+                    kind,
                     observations,
-                    Priority.LOW,
+                    priority,
+                    observation=event_observation,
                     state=state,
                     now=now,
                 )
-            ):
-                notifications["last_heartbeat_at"] = now.isoformat()
+                if delivered and priority == Priority.MAX:
+                    target_notifications["last_max_alert_at"] = now.isoformat()
+                    target_notifications["last_high_alert_remaining"] = (
+                        event_observation.current_value
+                    )
+                elif delivered:
+                    target_notifications["last_high_alert_at"] = now.isoformat()
+                    target_notifications["last_high_alert_remaining"] = (
+                        event_observation.current_value
+                    )
+                    target_notifications["last_urgent_at"] = now.isoformat()
+                    target_notifications["last_urgent_remaining"] = (
+                        event_observation.current_value
+                    )
+                if delivered:
+                    notifications["last_status_notification_at"] = now.isoformat()
+                    if notifications["notification_cadence_started_at"] is None:
+                        notifications["notification_cadence_started_at"] = (
+                            now.isoformat()
+                        )
 
-            daily_due = (
-                self.settings.enable_daily_summary
-                and now.hour >= self.settings.daily_summary_hour
-                and notifications["last_daily_summary_date"] != now.date().isoformat()
-            )
-            if daily_due and self._send(
-                sent,
-                "daily_summary",
-                observations,
-                Priority.NORMAL,
-                daily_statistics=state["statistics"]["daily"],
-                state=state,
-                now=now,
+            if not notification_selected and _is_due(
+                notifications["last_status_notification_at"],
+                now,
+                self.settings.check_interval,
             ):
-                notifications["last_daily_summary_date"] = now.date().isoformat()
+                default_anchor = (
+                    notifications["last_default_notification_at"]
+                    or notifications["notification_cadence_started_at"]
+                )
+                default_due = default_anchor is not None and _is_due(
+                    default_anchor, now, self.settings.heartbeat_interval
+                )
+                kind = "default" if default_due else "min"
+                priority = Priority.DEFAULT if default_due else Priority.MIN
+                if self._send(
+                    sent,
+                    kind,
+                    observations,
+                    priority,
+                    state=state,
+                    now=now,
+                ):
+                    notifications["last_status_notification_at"] = now.isoformat()
+                    if notifications["notification_cadence_started_at"] is None:
+                        notifications["notification_cadence_started_at"] = (
+                            now.isoformat()
+                        )
+                    if default_due:
+                        notifications["last_default_notification_at"] = now.isoformat()
+                        notifications["last_heartbeat_at"] = now.isoformat()
+                    else:
+                        notifications["last_min_notification_at"] = now.isoformat()
 
             primary_target_notifications = primary_state["notifications"]
-            notifications["last_urgent_at"] = primary_target_notifications[
-                "last_urgent_at"
-            ]
-            notifications["last_urgent_remaining"] = primary_target_notifications[
-                "last_urgent_remaining"
-            ]
+            for key in (
+                "last_high_alert_at",
+                "last_high_alert_remaining",
+                "availability_started_at",
+                "last_max_alert_at",
+                "last_urgent_at",
+                "last_urgent_remaining",
+            ):
+                notifications[key] = primary_target_notifications.get(key)
 
             duration_ms = (time.monotonic() - started) * 1000
             state["statistics"]["duration_total_ms"] += duration_ms

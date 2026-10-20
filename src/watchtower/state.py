@@ -32,6 +32,14 @@ def new_state() -> dict[str, Any]:
             "daily_statistics": [],
         },
         "notifications": {
+            "last_min_notification_at": None,
+            "last_default_notification_at": None,
+            "last_high_alert_at": None,
+            "last_high_alert_remaining": None,
+            "availability_started_at": None,
+            "last_max_alert_at": None,
+            "last_status_notification_at": None,
+            "notification_cadence_started_at": None,
             "last_heartbeat_at": None,
             "last_urgent_at": None,
             "last_urgent_remaining": None,
@@ -59,6 +67,70 @@ def new_state() -> dict[str, Any]:
     }
 
 
+def _notification_defaults() -> dict[str, Any]:
+    return {
+        "last_min_notification_at": None,
+        "last_default_notification_at": None,
+        "last_high_alert_at": None,
+        "last_high_alert_remaining": None,
+        "availability_started_at": None,
+        "last_max_alert_at": None,
+        "last_status_notification_at": None,
+        "notification_cadence_started_at": None,
+        "last_heartbeat_at": None,
+        "last_urgent_at": None,
+        "last_urgent_remaining": None,
+        "last_daily_summary_date": None,
+        "failures": {"count": 0, "last_at": None, "last_kind": None},
+    }
+
+
+def _normalize_notifications(value: object) -> dict[str, Any]:
+    notifications = value if isinstance(value, dict) else {}
+    for key, default in _notification_defaults().items():
+        notifications.setdefault(
+            key, default.copy() if isinstance(default, dict) else default
+        )
+
+    # Existing installations used heartbeat/urgent names. Treat their successful
+    # timestamps as cadence anchors so an upgrade cannot duplicate an alert.
+    if notifications["last_default_notification_at"] is None:
+        notifications["last_default_notification_at"] = notifications.get(
+            "last_heartbeat_at"
+        )
+    if notifications["last_high_alert_at"] is None:
+        notifications["last_high_alert_at"] = notifications.get("last_urgent_at")
+    if notifications["last_high_alert_remaining"] is None:
+        notifications["last_high_alert_remaining"] = notifications.get(
+            "last_urgent_remaining"
+        )
+    if notifications["last_status_notification_at"] is None:
+        notifications["last_status_notification_at"] = (
+            notifications["last_high_alert_at"]
+            or notifications["last_default_notification_at"]
+        )
+    if notifications["notification_cadence_started_at"] is None:
+        notifications["notification_cadence_started_at"] = notifications[
+            "last_status_notification_at"
+        ]
+    return notifications
+
+
+def _normalize_state(state: dict[str, Any]) -> dict[str, Any]:
+    state.setdefault("last_check", None)
+    state["notifications"] = _normalize_notifications(state.get("notifications"))
+    for collection_name in ("targets", "levels"):
+        targets = state.get(collection_name)
+        if not isinstance(targets, dict):
+            continue
+        for target in targets.values():
+            if isinstance(target, dict):
+                target["notifications"] = _normalize_notifications(
+                    target.get("notifications")
+                )
+    return state
+
+
 class StateStore:
     def __init__(self, path: Path) -> None:
         self.path = path
@@ -77,7 +149,7 @@ class StateStore:
             value = json.loads(self.path.read_text(encoding="utf-8"))
             if not isinstance(value, dict) or value.get("schema_version") != 1:
                 raise StateError("Unsupported or missing state schema")
-            return value
+            return _normalize_state(value)
         except (OSError, json.JSONDecodeError, StateError) as exc:
             if not recover:
                 raise StateError(f"State is unreadable: {exc}") from exc

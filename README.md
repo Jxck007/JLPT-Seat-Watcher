@@ -8,13 +8,13 @@ The monitor does not log in, register candidates, submit forms, or expose notifi
 
 | Condition | ntfy priority | Behaviour |
 |---|---:|---|
-| Ordinary 15-minute check | none | State and dashboard update only |
-| Seats remain full | 2 (low) | One quiet heartbeat every hour |
+| Successful 15-minute check | 1 (min) | Very quiet status notification |
+| Hourly cadence | 3 (default) | Replaces the MIN notification for that run |
 | Remaining changes to a positive value | 4 (high) | Immediate seat alert |
 | Positive remaining value changes | 4 (high) | Immediate updated seat alert |
-| Seats remain available | 4 (high) | Optional repeat after 15 minutes |
+| Seats stay continuously available for 6 hours | 5 (max) | Escalation, repeated at most every 6 hours |
 
-Successful heartbeat and seat-alert timestamps are written to `data/state.json`. A failed notification is recorded but remains eligible for retry. The monitor workflow uses concurrency protection and restores the latest run-specific state cache before each check.
+Exactly one seat-status notification is selected per successful run using MAX → HIGH → DEFAULT → MIN precedence. Successful timestamps and the continuous-availability timer are written to `data/state.json`. A failed notification is recorded but remains eligible for retry. The monitor workflow uses concurrency protection and restores the latest run-specific state cache before each check.
 
 ## GitHub configuration
 
@@ -57,9 +57,7 @@ session: Afternoon
 timezone: Asia/Kolkata
 check_interval: 900
 heartbeat_interval: 3600
-repeat_available_alerts: true
-available_alert_interval: 900
-quiet_heartbeat: true
+max_alert_interval: 21600
 enable_daily_summary: false
 ```
 
@@ -86,7 +84,7 @@ The monitor workflow supports manual scraper and notification tests. The notific
 - `low`, mapped to ntfy priority 2
 - `high`, mapped to ntfy priority 4
 
-Phone sound, vibration, and heads-up behaviour depends on the ntfy Android app and channel settings. Code-level priority can be verified automatically, but device behaviour must be confirmed by the phone owner.
+Phone sound, vibration, and heads-up behaviour depends on the ntfy Android app and channel settings. Code-level priority can be verified automatically, but device behaviour must be confirmed by the phone owner. Scheduled checks run entirely on GitHub-hosted runners.
 
 ## License
 

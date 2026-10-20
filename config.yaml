@@ -11,9 +11,7 @@ timezone: Asia/Kolkata
 check_interval: 900
 heartbeat_interval: 3600
 urgent_interval: 900
-repeat_available_alerts: true
-available_alert_interval: 900
-quiet_heartbeat: true
+max_alert_interval: 21600
 log_level: INFO
 scraper_timeout: 30
 max_retries: 3

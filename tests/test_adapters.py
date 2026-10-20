@@ -107,9 +107,9 @@ def test_generic_adapter_runs_without_jlpt_engine_changes(settings: Settings) ->
     ).run_once()
 
     assert adapter.calls[:3] == ["fetch", "parse", "validate"]
-    assert adapter.events == ["urgent", "heartbeat"]
+    assert adapter.events == ["high"]
     assert result.observation.target_key == "example:inventory"
-    assert result.notifications == ("urgent", "heartbeat")
+    assert result.notifications == ("high",)
     state = StateStore(configured.state_path).load()
     assert state["targets"]["example:inventory"]["current"]["value"] == 7
     assert state["history"]["executions"][0]["observations"][0]["target"] == (

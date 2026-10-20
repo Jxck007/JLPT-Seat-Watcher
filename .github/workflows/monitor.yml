@@ -42,9 +42,7 @@ jobs:
       TIMEZONE: ${{ vars.TIMEZONE || 'Asia/Kolkata' }}
       CHECK_INTERVAL: "900"
       HEARTBEAT_INTERVAL: "3600"
-      REPEAT_AVAILABLE_ALERTS: "true"
-      AVAILABLE_ALERT_INTERVAL: "900"
-      QUIET_HEARTBEAT: "true"
+      MAX_ALERT_INTERVAL: "21600"
       ENABLE_PLAYWRIGHT: "true"
       ENABLE_SCREENSHOT: "true"
       PYTHONUNBUFFERED: "1"
@@ -147,6 +145,7 @@ jobs:
             --docs docs \
             --check-interval 900 \
             --heartbeat-interval 3600 \
+            --max-alert-interval 21600 \
             --timezone "${TIMEZONE}" \
             --max-checks 500
 
